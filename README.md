@@ -32,4 +32,4 @@ Opportunities:
 
 ## Getting Started
 
-  * git clone 
+  * git clone https://github.com/cpabad/Christian-Project1.git
