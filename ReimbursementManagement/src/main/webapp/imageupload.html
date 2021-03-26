@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>Expense Reimbursement System</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"/>
+        <link rel="stylesheet" href="./CSS/homepage.css">
+        <script>
+            function backToHomepage(){
+                let url = 'http://localhost:8080/ReimbursementManagement/employeehomepage.html'
+                let newWindow = window
+                newWindow.location.href = url
+                newWindow.addEventListener('onload', backToHomepage)
+            }
+            function logout(){
+                let xhr = new XMLHttpRequest()
+                xhr.onreadystatechange = function(){
+                    if(xhr.status === 200 && xhr.readyState ===4){
+                        window.alert('Hope your adventures take you back here and you have a nice day!')
+                        window.open('http://localhost:8080/ReimbursementManagement/index.html', '_self')
+                    }
+                }
+                xhr.open('GET', 'http://localhost:8080/ReimbursementManagement/app/logout')
+                xhr.send()
+                
+            }
+
+            let logoutButton = document.getElementById('logoutButton')
+            logoutButton.addEventListener('click', logout)
+        </script>
+    </head>
+    <body style="background-color: lightslategrey;">
+        <div class="loginDivClass1">
+            <div>
+                <button id="homepage">Home</button>
+            </div>
+            <div id="divSubmitRequest">
+                <form target="_blank" action="upload-file" method="post" enctype="multipart/form-data">
+                    <table>
+                        <td><input type="file" id="myFileField" name="myFile" required></td>
+                        <td><button type="submit" onclick="return backToHomepage()">SUBMIT</button></td>
+                    </table>
+                </form>
+            </div>
+            <div>
+                <button id="logoutButton">Logout</button>
+            </div>
+        </div>
+        <script src="./JS/imageupload.js"></script>
+    </body>
+</html>

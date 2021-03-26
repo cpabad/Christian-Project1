@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>Expense Reimbursement System</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"/>
+        <link rel="stylesheet" href="./CSS/homepage.css">
+    </head>
+    <body style="background-color: lightslategrey;">
+        <div class="update-user-info-div-class">
+            <div>
+                <button id="homepage">Home</button>
+            </div>
+            <div>
+                <div id="updateUsernameDiv">
+                    <input placeholder="Current Username" type="text" name="oldusername" id="oldusername" required>
+                    <input placeholder="New Username (Leave Empty If No Change)" type="text" name="newusername" id="newusername">
+                    <input placeholder="Confirm New Username" type="text" name="newusername" id="confirmnewusername"> 
+                </div> <br>
+                <div id="updatePasswordDiv">
+                    <input placeholder="Current Password" type="text" name="oldpassword" id="oldpassword" required>
+                    <input placeholder="New Password (Leave Empty If No Change)" type="text" name="newpassword" id="newpassword">
+                    <input placeholder="Confirm New Password" type="text" name="newpassword" id="confirmnewpassword">
+                </div> <br>
+                <div id="updateEmailDiv">
+                    <input placeholder="Current Email" type="email" name="oldemail" id="oldemail" required>
+                    <input placeholder="New Email (Leave Empty If No Change)" type="email" name="newemail" id="newemail">
+                    <input placeholder="Confirm New Email" type="text" name="newemail" id="confirmnewemail">
+                </div> <br>
+                <button id="updateUser">Submit Updated Information</button>
+            </div>
+            <div>
+                <button id="logoutButton">Logout</button>
+            </div>
+        </div>
+        <script src="./JS/employeeupdate.js"></script>
+    </body>
+</html>

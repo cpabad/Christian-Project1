@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>Expense Reimbursement System</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"/>
+        <link rel="stylesheet" href="./CSS/homepage.css">
+    </head>
+    <body style="background-color: lightslategrey;">
+        <div class="loginDivClass1">
+            <div>
+                <button id="homepage">Home</button>
+            </div>
+            <div id="divSubmitRequest">
+                <input type="text" placeholder="Event Title" id="eventTitle" required/> <br>
+                <input type="number" placeholder="DD" id="eventDay" required/>
+                <input type="month" placeholder="MM" id="eventMonth">
+                <input type="number" placeholder="YYYY" id="eventYear" required/> <br>
+                <input type="number" placeholder="Street Number" id="streetNumber" required/>
+                <input type="text" placeholder="Street Name" id="streetName" required/> <br>
+                <input type="text" placeholder="City" id="city" required/>
+                <input type="text" placeholder="State" id="state" required/>
+                <input type="text" placeholder="Postal or Zip Code" id="zipCode" required/> <br>
+                <input type="number" step="0.01" placeholder="Dollar Amount Requested" id="amount" required/>
+                <button id="submitRequest">Submit Request</button>
+            </div>
+            <div>
+                <button id="logoutButton">Logout</button>
+            </div>
+        </div>
+        <script src="./JS/employeerequestsubmission.js"></script>
+    </body>
+</html>
