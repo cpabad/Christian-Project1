@@ -57,8 +57,8 @@ CREATE TABLE employee_supervisor_jt(
 INSERT INTO employee_supervisor_jt values(DEFAULT, 1, 2);
 INSERT INTO employee_supervisor_jt values(DEFAULT, 1, 3);
 INSERT INTO employee_supervisor_jt values(DEFAULT, 2, 3);
-INSERT INTO employee_supervisor_jt values(DEFAULT, 1, 4);
 INSERT INTO employee_supervisor_jt values(DEFAULT, 2, 4);
+INSERT INTO employee_supervisor_jt values(DEFAULT, 1, 4);
 
 CREATE TABLE city_state_postal(
 	postalCode integer PRIMARY KEY,
@@ -97,7 +97,7 @@ CREATE TABLE request(
 	requesterUserId integer REFERENCES users(userId),
 	statusId integer REFERENCES request_status(statusId)
 );
-INSERT INTO request values(DEFAULT, 100.01, '2021-01-14', 1, 'Anime Convention', 3, 2);
+INSERT INTO request values(DEFAULT, 100.01, '2021-01-14', 1, 'Anime Convention', 2, 2);
 INSERT INTO request values(DEFAULT, 100.01, '2021-01-14', 1, 'Anime Convention', 4, 2);
 INSERT INTO request values(DEFAULT, 10000.99, '2021-01-17', 2, 'Magic Tricks Boot Camp', 2, 2);
 INSERT INTO request values(DEFAULT, 1.99, '2021-02-01', 2, 'Topology Crash Course', 3, 1);
@@ -138,7 +138,6 @@ INSERT INTO supervisor_approval values(DEFAULT, '2000-01-01', 1, 3, 2, 'no');
 INSERT INTO supervisor_approval values(DEFAULT, '2000-01-01', 1, 2, 2, 'no');
 INSERT INTO supervisor_approval values(DEFAULT, '2000-01-01', 2, 4, 2, 'no');
 INSERT INTO supervisor_approval values(DEFAULT, '2000-01-01', 2, 5, 2, 'no');
-INSERT INTO supervisor_approval values(DEFAULT, '2000-01-01', 3, 1, 2, 'no');
 INSERT INTO supervisor_approval values(DEFAULT, '2021-02-06', 4, 3, 1, 'yes');
 INSERT INTO supervisor_approval values(DEFAULT, '2021-02-06', 4, 2, 1, 'yes');
 

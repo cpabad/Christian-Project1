@@ -127,7 +127,7 @@ public class RequestHelper {
 					response.setStatus(400);
 					LOG.debug("Client already has a current session");
 					return "You already have a current session. Logout before continuing.";
-				} else if(employee != null && loginEmpPassword.isBlank() == false) {
+				} else if(employee != null && loginEmpPassword.trim().isEmpty() == false) {
 					if(loginEmpPassword.equals(employee.getPassword())) {
 						HttpSession session = request.getSession();
 						session.setAttribute("userId", employee.getUserId());
@@ -166,7 +166,7 @@ public class RequestHelper {
 					LOG.debug("Client already has a current session");
 					return "You already have a current session. Logout before continuing.";
 				
-				} else if(manager != null && manager.getRole().getRoleId() == 1 && loginMgrPassword.isBlank() == false) {
+				} else if(manager != null && manager.getRole().getRoleId() == 1 && loginMgrPassword.trim().isEmpty() == false) {
 					if(loginMgrPassword.equals(manager.getPassword())) {
 						HttpSession session = request.getSession();
 						session.setAttribute("userId", manager.getUserId());
@@ -235,8 +235,8 @@ public class RequestHelper {
 			return new RequestService().findByRequester(new UserService().findById(Integer.parseInt(request.getParameter("employeeId"))));
 		case "/employee/update-user-information":
 			User updatedUser = new UserService().findById((Integer) request.getSession(false).getAttribute("userId"));
-			if(request.getParameter("confirmusername").isBlank() == false) {
-				if(request.getParameter("oldusername").isBlank() == false && updatedUser.getUsername().equals(request.getParameter("oldusername"))) {
+			if(request.getParameter("confirmusername").trim().isEmpty() == false) {
+				if(request.getParameter("oldusername").trim().isEmpty() == false && updatedUser.getUsername().equals(request.getParameter("oldusername"))) {
 					try {
 						new UserService().findByUsername(request.getParameter("newusername"));
 					} catch (NonUniqueObjectException e) {
@@ -253,7 +253,7 @@ public class RequestHelper {
 					return "Invalid entries. Please try again.";
 				}
 			}
-			if(request.getParameter("confirmpassword").isBlank() == false) {
+			if(request.getParameter("confirmpassword").trim().isEmpty() == false) {
 				if(request.getParameter("oldpassword") != null && updatedUser.getPassword().equals(request.getParameter("oldpassword"))) {
 					updatedUser.setPassword(request.getParameter("newpassword"));
 				} else {
@@ -262,9 +262,9 @@ public class RequestHelper {
 					return "Invalid entries. Please try again.";
 				}
 			}
-			if(request.getParameter("confirmemail").isBlank() == false) {
+			if(request.getParameter("confirmemail").trim().isEmpty() == false) {
 				if(request.getParameter("oldemail") != null && updatedUser.getEmail().equals(request.getParameter("oldemail"))) {
-					if(request.getParameter("newemail").isBlank() == false) {
+					if(request.getParameter("newemail").trim().isEmpty() == false) {
 						try {
 							new UserService().findByEmail(request.getParameter("newemail"));
 						} catch (NonUniqueObjectException e) {
@@ -283,7 +283,7 @@ public class RequestHelper {
 					return "Invalid entries. Please try again.";
 				}
 			}
-			if(request.getParameter("confirmusername").isBlank() && request.getParameter("confirmpassword").isBlank() && request.getParameter("confirmemail").isBlank()) {
+			if(request.getParameter("confirmusername").trim().isEmpty() && request.getParameter("confirmpassword").trim().isEmpty() && request.getParameter("confirmemail").trim().isEmpty()) {
 				response.setStatus(400);
 				return "Make some entries before clicking submit";
 			}
@@ -354,8 +354,8 @@ public class RequestHelper {
 			return "The file was uploaded successfully! Please exit this page to return to the homepage.";
 		case "/manager/update-user-information":
 			User updatedMgr = new UserService().findById((Integer) request.getSession(false).getAttribute("userId"));
-			if(request.getParameter("confirmusername").isBlank() == false) {
-				if(request.getParameter("oldusername").isBlank() == false && updatedMgr.getUsername().equals(request.getParameter("oldusername"))) {
+			if(request.getParameter("confirmusername").trim().isEmpty() == false) {
+				if(request.getParameter("oldusername").trim().isEmpty() == false && updatedMgr.getUsername().equals(request.getParameter("oldusername"))) {
 					try {
 						new UserService().findByUsername(request.getParameter("newusername"));
 					} catch (NonUniqueObjectException e) {
@@ -372,7 +372,7 @@ public class RequestHelper {
 					return "Invalid entries. Please try again.";
 				}
 			}
-			if(request.getParameter("confirmpassword").isBlank() == false) {
+			if(request.getParameter("confirmpassword").trim().isEmpty() == false) {
 				if(request.getParameter("oldpassword") != null && updatedMgr.getPassword().equals(request.getParameter("oldpassword"))) {
 					updatedMgr.setPassword(request.getParameter("newpassword"));
 				} else {
@@ -381,9 +381,9 @@ public class RequestHelper {
 					return "Invalid entries. Please try again.";
 				}
 			}
-			if(request.getParameter("confirmemail").isBlank() == false) {
+			if(request.getParameter("confirmemail").trim().isEmpty() == false) {
 				if(request.getParameter("oldemail") != null && updatedMgr.getEmail().equals(request.getParameter("oldemail"))) {
-					if(request.getParameter("newemail").isBlank() == false) {
+					if(request.getParameter("newemail").trim().isEmpty() == false) {
 						try {
 							new UserService().findByEmail(request.getParameter("newemail"));
 						} catch (NonUniqueObjectException e) {
@@ -402,7 +402,7 @@ public class RequestHelper {
 					return "Invalid entries. Please try again.";
 				}
 			}
-			if(request.getParameter("confirmusername").isBlank() && request.getParameter("confirmpassword").isBlank() && request.getParameter("confirmemail").isBlank()) {
+			if(request.getParameter("confirmusername").trim().isEmpty() && request.getParameter("confirmpassword").trim().isEmpty() && request.getParameter("confirmemail").trim().isEmpty()) {
 				response.setStatus(400);
 				return "Make some entries before clicking submit";
 			}
