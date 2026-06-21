@@ -157,7 +157,7 @@ public class User {
 	}
 	@Override
 	public String toString() {
-		return "User [userId=" + userId + ", username=" + username + ", password=" + password + ", firstName="
+		return "User [userId=" + userId + ", username=" + username + ", password=[PROTECTED], firstName="
 				+ firstName + ", lastName=" + lastName + ", email=" + email + ", role=" + role + "]";
 	}
 	public User(int userId, String username, String password, String firstName, String lastName, String email,
