@@ -1,6 +1,8 @@
 package com.revature.service;
 
 import java.sql.Date;
+import java.util.Arrays;
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -25,20 +27,20 @@ import com.revature.model.User;
 import com.revature.repository.ReimbursementRepositoryImpl;
 
 public class ReimbursementServiceTest {
-	
+
 	@InjectMocks private static ReimbursementService reimbursementService;
 	@Mock private static ReimbursementRepositoryImpl reimbursementRepository;
-	
+
 	@BeforeClass
 	public static void setupBeforeClass() {
 		reimbursementService = new ReimbursementService();
 	}
-	
+
 	@Before
 	public void setupBeforeEachMethod() {
 		MockitoAnnotations.openMocks(this);
 	}
-	
+
 	@Test
 	public void testFindById() {
 		User mockUser1 = new User(1, "Star Platinum", "Stand Proud", "Jotaro", "Kujo", "sp@email.com", new Role(1, "Being awesome"));
@@ -53,7 +55,7 @@ public class ReimbursementServiceTest {
 		Reimbursement retrievedAward = reimbursementService.findById(1);
 		Assert.assertEquals("mudamudamuda", retrievedAward.getFinalApproval().getHierarchy().getSupervisorUser().getPassword());
 	}
-	
+
 	@Test
 	public void testFindByRequest() {
 		User mockUser1 = new User(1, "Star Platinum", "Stand Proud", "Jotaro", "Kujo", "sp@email.com", new Role(1, "Being awesome"));
@@ -69,7 +71,7 @@ public class ReimbursementServiceTest {
 		Assert.assertEquals("mudamudamuda", retrievedAward.getFinalApproval().getHierarchy().getSupervisorUser().getPassword());
 
 	}
-	
+
 	@Test
 	public void testFindByEventDateAndRequester() {
 		User mockUser1 = new User(1, "Star Platinum", "Stand Proud", "Jotaro", "Kujo", "sp@email.com", new Role(1, "Being awesome"));
@@ -84,6 +86,38 @@ public class ReimbursementServiceTest {
 		Reimbursement retrievedAward = reimbursementService.findByEventDateAndRequester("2000-01-01", mockUser1);
 		Assert.assertEquals("mudamudamuda", retrievedAward.getFinalApproval().getHierarchy().getSupervisorUser().getPassword());
 
+	}
+
+	@Test
+	public void testFindAll() {
+		Reimbursement r1 = new Reimbursement(1, 100.00, Date.valueOf("2000-01-01"), null, new ReimbursementStatus(1, "Resolved"));
+		Reimbursement r2 = new Reimbursement(2, 200.00, Date.valueOf("2000-01-02"), null, new ReimbursementStatus(2, "Pending"));
+		Mockito.when(reimbursementRepository.findAll()).thenReturn(Arrays.asList(r1, r2));
+		List<Reimbursement> result = reimbursementService.findAll();
+		Assert.assertEquals(2, result.size());
+		Assert.assertSame(r1, result.get(0));
+	}
+
+	@Test
+	public void testAddReimbursement() {
+		Reimbursement r = new Reimbursement(1, 100.00, Date.valueOf("2000-01-01"), null, new ReimbursementStatus(1, "Resolved"));
+		reimbursementService.addReimbursement(r);
+		Mockito.verify(reimbursementRepository).addReimbursement(r);
+	}
+
+	@Test
+	public void testUpdateReimbursement() {
+		Reimbursement r = new Reimbursement(1, 100.00, Date.valueOf("2000-01-01"), null, new ReimbursementStatus(1, "Resolved"));
+		reimbursementService.updateReimbursement(r);
+		Mockito.verify(reimbursementRepository).updateReimbursement(r);
+	}
+
+	@Test
+	public void testDeleteReimbursement() {
+		Reimbursement r = new Reimbursement(1, 100.00, Date.valueOf("2000-01-01"), null, new ReimbursementStatus(1, "Resolved"));
+		reimbursementService.deleteReimbursement(r);
+		// deleteReimbursement has an empty body: it must NOT touch the repository (documents the no-op stub)
+		Mockito.verifyNoInteractions(reimbursementRepository);
 	}
 
 }
