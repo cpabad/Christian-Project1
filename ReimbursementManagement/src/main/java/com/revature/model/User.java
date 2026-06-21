@@ -7,6 +7,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * A model representing a user. Any user is an employee for the company that uses this system. 
  * A client is granted a session with our service if a User model can be created.
@@ -32,6 +34,7 @@ public class User {
 	 * The password field is the String value needed to access privileges for a user.
 	 */
 	@Column(name = "loginPassword", nullable = false)
+	@JsonIgnore
 	private String password;
 	/**
 	 * The firstName field is the first name of the user.
