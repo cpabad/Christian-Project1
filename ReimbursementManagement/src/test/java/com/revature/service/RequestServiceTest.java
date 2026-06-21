@@ -84,4 +84,36 @@ public class RequestServiceTest {
 		Assert.assertEquals("Walking", retrievedRequests.get(1).getRequestedEvent());
 	}
 
+	@Test
+	public void testFindByRequesterAndResolvedStatus() {
+		User requester = new User(1, "emp", "pw", "E", "E", "e@email.com", new Role(2, "Employee"));
+		Request resolved = new Request(1, 100.00, Date.valueOf("2000-01-01"), new EventLocation(1, 0, "Main St", new CityStatePostal(1, "City", "State")), "Resolved Event", requester, new RequestStatus(1, "Resolved"));
+		Mockito.when(requestRepository.findByRequesterAndResolvedStatus(requester)).thenReturn(Arrays.asList(resolved));
+		List<Request> result = requestService.findByRequesterAndResolvedStatus(requester);
+		Assert.assertEquals(1, result.size());
+		Assert.assertEquals("Resolved Event", result.get(0).getRequestedEvent());
+	}
+
+	@Test
+	public void testMakeNewRequest() {
+		Request request = new Request();
+		requestService.makeNewRequest(request);
+		Mockito.verify(requestRepository).makeNewRequest(request);
+	}
+
+	@Test
+	public void testUpdateRequest() {
+		Request request = new Request();
+		requestService.updateRequest(request);
+		Mockito.verify(requestRepository).updateRequest(request);
+	}
+
+	@Test
+	public void testDeleteRequest() {
+		Request request = new Request();
+		requestService.deleteRequest(request);
+		// deleteRequest has an empty body: it must NOT touch the repository (documents the no-op stub)
+		Mockito.verifyNoInteractions(requestRepository);
+	}
+
 }

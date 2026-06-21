@@ -49,4 +49,12 @@ public class UserServiceTest {
 		Assert.assertEquals("Being a badass", retrievedUser.getRole().getRole());
 	}
 
+	@Test
+	public void testUpdate() {
+		User user = new User(1, "Major", "GhostInTheShell", "Matoko", "Kusanagi", "mk@section9.com", new Role(1, "Being a badass"));
+		userService.update(user);
+		// UserService.update delegates to the repository's updateEmployee(...)
+		Mockito.verify(userRepository).updateEmployee(user);
+	}
+
 }
