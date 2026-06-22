@@ -93,7 +93,7 @@ function viewPendingEmpRequest(){
             } 
         }
     }
-    xhr.open('GET', 'http://localhost:8080/ReimbursementManagement/app/employee/view-pending-requests')
+    xhr.open('GET', '/ReimbursementManagement/app/employee/view-pending-requests')
     xhr.send()
 }
 let viewPendingRequestEmpButton = document.getElementById('viewPendingRequestEmpStatus')
@@ -194,7 +194,7 @@ function viewResolvedEmpRequest(){
             } 
         }
     }
-    xhr.open('GET', 'http://localhost:8080/ReimbursementManagement/app/employee/view-resolved-requests')
+    xhr.open('GET', '/ReimbursementManagement/app/employee/view-resolved-requests')
     xhr.send()
 }
 let viewResolvedRequestEmpButton = document.getElementById('viewResolvedRequestEmpStatus')
@@ -277,7 +277,7 @@ function viewUser(){
             }
         }
     }
-    xhr.open('GET', 'http://localhost:8080/ReimbursementManagement/app/employee/view-user-information')
+    xhr.open('GET', '/ReimbursementManagement/app/employee/view-user-information')
     xhr.send()
 }
 
@@ -289,10 +289,10 @@ function logout(){
     xhr.onreadystatechange = function(){
         if(xhr.status === 200 && xhr.readyState ===4){
             window.alert('Hope your adventures take you back here and you have a nice day!')
-            window.open('http://localhost:8080/ReimbursementManagement/index.html', '_self')
+            window.open('/ReimbursementManagement/index.html', '_self')
         }
     }
-    xhr.open('GET', 'http://localhost:8080/ReimbursementManagement/app/logout')
+    xhr.open('GET', '/ReimbursementManagement/app/logout')
     xhr.send()
     
 }
@@ -304,10 +304,10 @@ function goToUpdateUser(){
     let xhr = new XMLHttpRequest()
     xhr.onreadystatechange = function(){
         if(xhr.status === 200 && xhr.readyState === 4) {
-            window.open('http://localhost:8080/ReimbursementManagement/employeeupdate.html', '_self')
+            window.open('/ReimbursementManagement/employeeupdate.html', '_self')
         }
     }
-    xhr.open('GET', 'http://localhost:8080/ReimbursementManagement/employeeupdate.html')
+    xhr.open('GET', '/ReimbursementManagement/employeeupdate.html')
     xhr.send()
 }
 let updateUserButton = document.getElementById('updateUser')
@@ -317,10 +317,10 @@ function goToSubmitRequest(){
     let xhr = new XMLHttpRequest()
     xhr.onreadystatechange = function(){
         if(xhr.status === 200 && xhr.readyState === 4) {
-            window.open('http://localhost:8080/ReimbursementManagement/employeerequestsubmission.html', '_self')
+            window.open('/ReimbursementManagement/employeerequestsubmission.html', '_self')
         }
     }
-    xhr.open('GET', 'http://localhost:8080/ReimbursementManagement/employeerequestsubmission.html')
+    xhr.open('GET', '/ReimbursementManagement/employeerequestsubmission.html')
     xhr.send()
 }
 let requestButton = document.getElementById('submitRequest')

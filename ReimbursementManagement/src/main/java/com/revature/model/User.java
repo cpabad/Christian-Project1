@@ -7,6 +7,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * A model representing a user. Any user is an employee for the company that uses this system. 
  * A client is granted a session with our service if a User model can be created.
@@ -32,6 +34,7 @@ public class User {
 	 * The password field is the String value needed to access privileges for a user.
 	 */
 	@Column(name = "loginPassword", nullable = false)
+	@JsonIgnore
 	private String password;
 	/**
 	 * The firstName field is the first name of the user.
@@ -103,7 +106,6 @@ public class User {
 		result = prime * result + ((email == null) ? 0 : email.hashCode());
 		result = prime * result + ((firstName == null) ? 0 : firstName.hashCode());
 		result = prime * result + ((lastName == null) ? 0 : lastName.hashCode());
-		result = prime * result + ((password == null) ? 0 : password.hashCode());
 		result = prime * result + ((role == null) ? 0 : role.hashCode());
 		result = prime * result + userId;
 		result = prime * result + ((username == null) ? 0 : username.hashCode());
@@ -133,11 +135,6 @@ public class User {
 				return false;
 		} else if (!lastName.equals(other.lastName))
 			return false;
-		if (password == null) {
-			if (other.password != null)
-				return false;
-		} else if (!password.equals(other.password))
-			return false;
 		if (role == null) {
 			if (other.role != null)
 				return false;
@@ -154,7 +151,7 @@ public class User {
 	}
 	@Override
 	public String toString() {
-		return "User [userId=" + userId + ", username=" + username + ", password=" + password + ", firstName="
+		return "User [userId=" + userId + ", username=" + username + ", password=[PROTECTED], firstName="
 				+ firstName + ", lastName=" + lastName + ", email=" + email + ", role=" + role + "]";
 	}
 	public User(int userId, String username, String password, String firstName, String lastName, String email,

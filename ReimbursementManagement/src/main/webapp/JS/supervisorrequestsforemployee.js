@@ -2,10 +2,10 @@ function goToHomepage(){
     let xhr = new XMLHttpRequest()
     xhr.onreadystatechange = function(){
         if(xhr.status === 200 && xhr.readyState ===4){
-            window.open('http://localhost:8080/ReimbursementManagement/supervisorhomepage.html', '_self')
+            window.open('/ReimbursementManagement/supervisorhomepage.html', '_self')
         }
     }
-    xhr.open('GET', 'http://localhost:8080/ReimbursementManagement/supervisorhomepage.html')
+    xhr.open('GET', '/ReimbursementManagement/supervisorhomepage.html')
     xhr.send()
 }
 let homepageButton = document.getElementById('homepage')
@@ -17,10 +17,10 @@ function logout(){
     xhr.onreadystatechange = function(){
         if(xhr.status === 200 && xhr.readyState ===4){
             window.alert('Hope your adventures take you back here and you have a nice day!')
-            window.open('http://localhost:8080/ReimbursementManagement/index.html', '_self')
+            window.open('/ReimbursementManagement/index.html', '_self')
         }
     }
-    xhr.open('GET', 'http://localhost:8080/ReimbursementManagement/app/logout')
+    xhr.open('GET', '/ReimbursementManagement/app/logout')
     xhr.send()
 }
 logoutButton.addEventListener('click', logout)
@@ -69,7 +69,7 @@ window.onload = function chooseEmployee(){
                     let labelb7 = document.createElement('td')
                     let choosebtn = document.createElement('button')
 
-                    let btnurl = 'http://localhost:8080/ReimbursementManagement/app/manager/select-employee?employeeId=' + r["userId"]
+                    let btnurl = '/ReimbursementManagement/app/manager/select-employee?employeeId=' + r["userId"]
                     
                     choosebtn.innerText = "View Requests"
                     let hasNoInnerTable = true
@@ -173,6 +173,6 @@ window.onload = function chooseEmployee(){
 
         }
     }
-    xhr.open('GET', 'http://localhost:8080/ReimbursementManagement/app/manager/view-your-employees')
+    xhr.open('GET', '/ReimbursementManagement/app/manager/view-your-employees')
     xhr.send()
 }

@@ -11,6 +11,7 @@ A reimbursement system for a company's employee/ Employees can request reimburse
 * Jackson Databind
 * JUnit
 * Log4J
+* Spring Security Crypto (BCrypt)
 * Maven
 * Tomcat
 * PostgreSQL
@@ -32,4 +33,37 @@ Opportunities:
 
 ## Getting Started
 
-  * git clone https://github.com/cpabad/Christian-Project1.git
+Clone the repository:
+
+```bash
+git clone https://github.com/cpabad/Christian-Project1.git
+```
+
+Prerequisites: Java 8 (JDK 1.8), Maven, PostgreSQL, and a servlet container (Tomcat).
+
+1. Create a PostgreSQL database and load the schema and seed data from
+   `ReimbursementManagement/ers_script.sql` into a schema named `ExpenseReimbursementManagementSystem`.
+2. Provide the database connection through environment variables (read at runtime):
+
+   ```bash
+   export dburl="jdbc:postgresql://localhost:5432/<your-db>"
+   export dbuser="<user>"
+   export dbpassword="<password>"
+   ```
+
+3. Build and test from `ReimbursementManagement/`:
+
+   ```bash
+   mvn clean package
+   ```
+
+   The suite includes repository integration tests that need the seeded database and the variables
+   above; add `-DskipTests` to build the WAR without them.
+4. Deploy `target/ReimbursementManagement-0.0.1-SNAPSHOT.war` to Tomcat. The frontend (HTML/JS/CSS)
+   is served by the same WAR, on the same origin as the API.
+
+## Documentation
+* `CHANGELOG.md` - the 2026 refresh (build fix, test coverage, security hardening) with the
+  root cause and fix for each change.
+* `COVERAGE.md` - how the 98% service-layer test coverage is measured and reproduced.
+* `NORMALIZATION.md` - the proof that the database design is in 5NF.

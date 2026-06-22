@@ -7,7 +7,7 @@ xhr.addEventListener("readystatechange", function() {
   }
 });
 
-xhr.open("POST", "http://localhost:8080/ReimbursementManagement/login?username=employee1&password=employeePassword");
+xhr.open("POST", "/ReimbursementManagement/login?username=employee1&password=employeePassword");
 xhr.setRequestHeader("Cookie", "JSESSIONID=[SCRUBBED-SESSION-ID]");
 
 xhr.send();

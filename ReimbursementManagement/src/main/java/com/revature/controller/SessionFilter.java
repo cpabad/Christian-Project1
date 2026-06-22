@@ -6,7 +6,6 @@ import java.io.PrintWriter;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
-import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -41,15 +40,15 @@ public class SessionFilter implements Filter {
 		HttpServletRequest httpRequest = (HttpServletRequest) request;
 		HttpSession session = httpRequest.getSession(false);
 		if(session == null && httpRequest.getRequestURI().equals("/ReimbursementManagement/") == false && httpRequest.getMethod().equals("GET")) {
-			RequestDispatcher dispatcher = request.getRequestDispatcher("app/login");
-			dispatcher.forward(httpRequest, response);
+			request.getRequestDispatcher("app/login").forward(httpRequest, response);
+			return;
 //		} else if(session != null && role == "Employee" && httpRequest.getRequestURI().equals("/ReimbursementManagement/upload-file")) {
 //			System.out.println("Hello!");
 //			RequestDispatcher dispatcher = request.getRequestDispatcher("app/login");
 //			dispatcher.forward(httpRequest, response);
-		} else if(session != null && httpRequest.getRequestURI().contains("supervisor") && (String) session.getAttribute("role") == "Employee") {
-			RequestDispatcher dispatcher = request.getRequestDispatcher("app/deny");
-			dispatcher.forward(httpRequest, response);
+		} else if(session != null && httpRequest.getRequestURI().contains("/manager/") && "Employee".equals((String) session.getAttribute("role"))) {
+			request.getRequestDispatcher("app/deny").forward(httpRequest, response);
+			return;
 		}
 		chain.doFilter(request, response);
 	}

@@ -63,10 +63,10 @@ function goToHomepage(){
     let xhr = new XMLHttpRequest()
     xhr.onreadystatechange = function(){
         if(xhr.status === 200 && xhr.readyState ===4){
-            window.open('http://localhost:8080/ReimbursementManagement/employeehomepage.html', '_self')
+            window.open('/ReimbursementManagement/employeehomepage.html', '_self')
         }
     }
-    xhr.open('GET', 'http://localhost:8080/ReimbursementManagement/employeehomepage.html')
+    xhr.open('GET', '/ReimbursementManagement/employeehomepage.html')
     xhr.send()
 }
 homepageButton.addEventListener('click', goToHomepage)
@@ -81,12 +81,12 @@ function updateUserInfo(){
     let confirmusername = document.getElementById('confirmnewusername').value
     let confirmpassword = document.getElementById('confirmnewpassword').value
     let confirmemail = document.getElementById('confirmnewemail').value
-    let url = 'http://localhost:8080/ReimbursementManagement/app/employee/update-user-information?oldusername=' + oldusername + '&newusername=' + newusername + '&oldpassword=' + oldpassword + '&newpassword=' + newpassword + '&oldemail=' + oldemail + '&newemail=' + newemail + '&confirmusername=' + confirmusername + '&confirmpassword=' + confirmpassword + '&confirmemail=' + confirmemail
+    let url = '/ReimbursementManagement/app/employee/update-user-information?oldusername=' + oldusername + '&newusername=' + newusername + '&oldpassword=' + oldpassword + '&newpassword=' + newpassword + '&oldemail=' + oldemail + '&newemail=' + newemail + '&confirmusername=' + confirmusername + '&confirmpassword=' + confirmpassword + '&confirmemail=' + confirmemail
     let xhr = new XMLHttpRequest()
     xhr.onreadystatechange = function(){
         if(xhr.status === 200 && xhr.readyState === 4){
             window.alert('Update was successful')
-            window.open('http://localhost:8080/ReimbursementManagement/employeehomepage.html', '_self')
+            window.open('/ReimbursementManagement/employeehomepage.html', '_self')
         }
         if(xhr.status === 400 && xhr.readyState === 4){
             alert(xhr.responseText)
@@ -109,10 +109,10 @@ function logout(){
     xhr.onreadystatechange = function(){
         if(xhr.status === 200 && xhr.readyState ===4){
             window.alert('Hope your adventures take you back here and you have a nice day!')
-            window.open('http://localhost:8080/ReimbursementManagement/index.html', '_self')
+            window.open('/ReimbursementManagement/index.html', '_self')
         }
     }
-    xhr.open('GET', 'http://localhost:8080/ReimbursementManagement/app/logout')
+    xhr.open('GET', '/ReimbursementManagement/app/logout')
     xhr.send()
 }
 logoutButton.addEventListener('click', logout)

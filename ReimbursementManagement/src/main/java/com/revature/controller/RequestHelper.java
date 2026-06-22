@@ -16,6 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.NonUniqueObjectException;
 import org.hibernate.ObjectNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.revature.model.AmazonS3Object;
 import com.revature.model.Hierarchy;
@@ -128,7 +129,7 @@ public class RequestHelper {
 					LOG.debug("Client already has a current session");
 					return "You already have a current session. Logout before continuing.";
 				} else if(employee != null && loginEmpPassword.trim().isEmpty() == false) {
-					if(loginEmpPassword.equals(employee.getPassword())) {
+					if(new BCryptPasswordEncoder().matches(loginEmpPassword, employee.getPassword())) {
 						HttpSession session = request.getSession();
 						session.setAttribute("userId", employee.getUserId());
 						session.setAttribute("username", employee.getUsername());
@@ -167,7 +168,7 @@ public class RequestHelper {
 					return "You already have a current session. Logout before continuing.";
 				
 				} else if(manager != null && manager.getRole().getRoleId() == 1 && loginMgrPassword.trim().isEmpty() == false) {
-					if(loginMgrPassword.equals(manager.getPassword())) {
+					if(new BCryptPasswordEncoder().matches(loginMgrPassword, manager.getPassword())) {
 						HttpSession session = request.getSession();
 						session.setAttribute("userId", manager.getUserId());
 						session.setAttribute("username", manager.getUsername());
@@ -254,8 +255,8 @@ public class RequestHelper {
 				}
 			}
 			if(request.getParameter("confirmpassword").trim().isEmpty() == false) {
-				if(request.getParameter("oldpassword") != null && updatedUser.getPassword().equals(request.getParameter("oldpassword"))) {
-					updatedUser.setPassword(request.getParameter("newpassword"));
+				if(request.getParameter("oldpassword") != null && new BCryptPasswordEncoder().matches(request.getParameter("oldpassword"), updatedUser.getPassword())) {
+					updatedUser.setPassword(new BCryptPasswordEncoder().encode(request.getParameter("newpassword")));
 				} else {
 					response.setStatus(400);
 					LOG.debug("Invalid entries");
@@ -373,8 +374,8 @@ public class RequestHelper {
 				}
 			}
 			if(request.getParameter("confirmpassword").trim().isEmpty() == false) {
-				if(request.getParameter("oldpassword") != null && updatedMgr.getPassword().equals(request.getParameter("oldpassword"))) {
-					updatedMgr.setPassword(request.getParameter("newpassword"));
+				if(request.getParameter("oldpassword") != null && new BCryptPasswordEncoder().matches(request.getParameter("oldpassword"), updatedMgr.getPassword())) {
+					updatedMgr.setPassword(new BCryptPasswordEncoder().encode(request.getParameter("newpassword")));
 				} else {
 					response.setStatus(400);
 					LOG.debug("Invalid entries");
