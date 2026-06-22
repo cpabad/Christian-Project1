@@ -67,7 +67,12 @@ Each entry gives the original problem, its root cause, the fix, and the takeaway
 - **Resolution.** Reworked it into the mirror of `ManagerFilter`: `/app/employee/*` now requires a session with the `Employee` role (login URLs exempt), and everyone else is forwarded to the deny view.
 - **Takeaway.** A filter that is mapped but does nothing is worse than none - it reads as protection that is not actually there.
 
+### Security - passwords are now hashed (BCrypt), not plaintext
+- **Symptom.** Passwords were stored and compared as plaintext (`password.equals(...)`), and the seed shipped real plaintext values. A database or backup leak would have handed over every credential directly.
+- **Root cause.** No hashing was ever applied; the only "hash" in the code was `User.hashCode()`, which is object-bucketing for collections, not cryptographic.
+- **Resolution.** Added `spring-security-crypto` and switched to `BCryptPasswordEncoder`: the two logins and the two profile old-password checks now verify with `matches(raw, storedHash)`, and password writes use `encode(...)`. Seed passwords were replaced with per-user bcrypt hashes. `password` was also dropped from `User.equals`/`hashCode` - it is not an identity attribute, and removing it keeps entity equality valid once the stored value is an opaque hash.
+- **Takeaway.** Never store a password - store a one-way, salted, slow (adaptive) hash and verify with `matches()`. Access modifiers and `hashCode()` are not security; bcrypt is. No schema change was needed (the `loginPassword` column already held a `varchar`), so the 5NF design is unaffected.
+
 ## Planned / not yet done
-- **Password hashing (BCrypt).** Replace plaintext storage and comparison; requires adding a hashing dependency and updating the seed plus the tests that compare passwords.
 - **EmployeeFilter** is an empty no-op; authorization should be consolidated (again, Spring Security).
 - **Three empty `delete*` stubs** (`deleteApproval`, `deleteRequest`, `deleteReimbursement`): intentional placeholders so every entity has a full CRUD surface; implement when needed, kept on purpose (not dead code).
