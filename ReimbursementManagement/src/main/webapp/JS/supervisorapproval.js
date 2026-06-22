@@ -20,14 +20,14 @@ window.onload = function viewPendingRequest(){
                     let approvebtn = document.createElement('button')
                     let denybtn = document.createElement('button')
 
-                    let btnurl = 'http://localhost:8080/ReimbursementManagement/app/manager/update-approval?requestId=' + r["request"]["requestId"]
+                    let btnurl = '/ReimbursementManagement/app/manager/update-approval?requestId=' + r["request"]["requestId"]
                     
                     approvebtn.innerText = "Approve"
                     approvebtn.addEventListener('click', function(event){
                         let xhrApprove = new XMLHttpRequest()
                         xhrApprove.onreadystatechange = function(){
                             if(xhrApprove.readyState === 4 && xhrApprove.status === 200){
-                                window.open('http://localhost:8080/ReimbursementManagement/supervisorapproval.html', '_self')
+                                window.open('/ReimbursementManagement/supervisorapproval.html', '_self')
                             } else if(xhrApprove.readyState === 4 && xhrApprove.status === 400){
                                 window.alert(xhrApprove.response)
                             }
@@ -41,7 +41,7 @@ window.onload = function viewPendingRequest(){
                         let xhrDeny = new XMLHttpRequest()
                         xhrDeny.onreadystatechange = function(){
                             if(xhrDeny.readyState === 4 && xhrDeny.status === 200){
-                                window.open('http://localhost:8080/ReimbursementManagement/supervisorapproval.html', '_self')
+                                window.open('/ReimbursementManagement/supervisorapproval.html', '_self')
                             } else if(xhrDeny.readyState === 4 && xhrDeny.status === 400){
                                 window.alert(xhrDeny.response)
                             }
@@ -75,7 +75,7 @@ window.onload = function viewPendingRequest(){
         }
         
     }
-    xhr.open('GET', 'http://localhost:8080/ReimbursementManagement/app/manager/view-employee-pending-approvals')
+    xhr.open('GET', '/ReimbursementManagement/app/manager/view-employee-pending-approvals')
     xhr.send()
 }
 
@@ -83,10 +83,10 @@ function goToHomepage(){
     let xhr = new XMLHttpRequest()
     xhr.onreadystatechange = function(){
         if(xhr.status === 200 && xhr.readyState ===4){
-            window.open('http://localhost:8080/ReimbursementManagement/supervisorhomepage.html', '_self')
+            window.open('/ReimbursementManagement/supervisorhomepage.html', '_self')
         }
     }
-    xhr.open('GET', 'http://localhost:8080/ReimbursementManagement/supervisorhomepage.html')
+    xhr.open('GET', '/ReimbursementManagement/supervisorhomepage.html')
     xhr.send()
 }
 let homepageButton = document.getElementById('homepage')
@@ -98,10 +98,10 @@ function logout(){
     xhr.onreadystatechange = function(){
         if(xhr.status === 200 && xhr.readyState ===4){
             window.alert('Hope your adventures take you back here and you have a nice day!')
-            window.open('http://localhost:8080/ReimbursementManagement/index.html', '_self')
+            window.open('/ReimbursementManagement/index.html', '_self')
         }
     }
-    xhr.open('GET', 'http://localhost:8080/ReimbursementManagement/app/logout')
+    xhr.open('GET', '/ReimbursementManagement/app/logout')
     xhr.send()
 }
 logoutButton.addEventListener('click', logout)
