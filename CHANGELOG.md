@@ -73,6 +73,12 @@ Each entry gives the original problem, its root cause, the fix, and the takeaway
 - **Resolution.** Added `spring-security-crypto` and switched to `BCryptPasswordEncoder`: the two logins and the two profile old-password checks now verify with `matches(raw, storedHash)`, and password writes use `encode(...)`. Seed passwords were replaced with per-user bcrypt hashes. `password` was also dropped from `User.equals`/`hashCode` - it is not an identity attribute, and removing it keeps entity equality valid once the stored value is an opaque hash.
 - **Takeaway.** Never store a password - store a one-way, salted, slow (adaptive) hash and verify with `matches()`. Access modifiers and `hashCode()` are not security; bcrypt is. No schema change was needed (the `loginPassword` column already held a `varchar`), so the 5NF design is unaffected.
 
+### Security - patched the remaining dated dependencies
+- **Symptom.** Several libraries were years behind and carried known CVEs.
+- **Resolution.** Bumped each to the latest patch on its existing line (lowest-risk): `jackson-databind` 2.12.1 -> 2.12.7.1 (CVE-2022-42003 / 42004), `postgresql` 42.2.18 -> 42.2.27 (CVE-2022-21724 / 26520), `hibernate-core` and `hibernate-ehcache` 5.4.28 -> 5.4.33, `tomcat-catalina` 8.5.61 -> 8.5.100. All 97 tests stayed green; the repository integration tests exercise Hibernate and the Postgres driver, so an ORM or driver regression would have surfaced.
+- **Takeaway.** Staying on the latest patch of a dependency's existing line absorbs security fixes with minimal behavioral churn - a safer first move than jumping major versions.
+
 ## Planned / not yet done
-- **EmployeeFilter** is an empty no-op; authorization should be consolidated (again, Spring Security).
+- **Spring Security migration** - the hand-rolled auth filters work, but consolidating authorization (and password handling) into Spring Security is the production-grade path.
+- **`FrontController` auth + hygiene** - enforce auth on `doGet`/`doPost`, drop the fake `doPut`/`doDelete` check, replace `printStackTrace` with the logger, disable `show_sql`, and remove the demo `DemoS3BucketUpload`.
 - **Three empty `delete*` stubs** (`deleteApproval`, `deleteRequest`, `deleteReimbursement`): intentional placeholders so every entity has a full CRUD surface; implement when needed, kept on purpose (not dead code).
