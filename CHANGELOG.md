@@ -78,7 +78,12 @@ Each entry gives the original problem, its root cause, the fix, and the takeaway
 - **Resolution.** Bumped each to the latest patch on its existing line (lowest-risk): `jackson-databind` 2.12.1 -> 2.12.7.1 (CVE-2022-42003 / 42004), `postgresql` 42.2.18 -> 42.2.27 (CVE-2022-21724 / 26520), `hibernate-core` and `hibernate-ehcache` 5.4.28 -> 5.4.33, `tomcat-catalina` 8.5.61 -> 8.5.100. All 97 tests stayed green; the repository integration tests exercise Hibernate and the Postgres driver, so an ORM or driver regression would have surfaced.
 - **Takeaway.** Staying on the latest patch of a dependency's existing line absorbs security fixes with minimal behavioral churn - a safer first move than jumping major versions.
 
+### Security - write-path authentication and cleanup
+- **`FrontController`.** `doPut`/`doDelete` had a tautological `if (method.equals("PUT"))` "check" that never rejected anything. Replaced it with a real one: POST/PUT/DELETE now require a session (login URLs exempt), so an unauthenticated write returns 401 instead of being processed. GET authentication stays with `SessionFilter`; role checks stay with the role filters.
+- **`show_sql`.** Turned off Hibernate's SQL echo (`show_sql=false`) - it logged every query (information leak plus noise).
+- **Demo code.** Removed the unused `DemoS3BucketUpload` servlet (dead demo code that also disclosed a developer path and an S3 bucket name).
+
 ## Planned / not yet done
-- **Spring Security migration** - the hand-rolled auth filters work, but consolidating authorization (and password handling) into Spring Security is the production-grade path.
-- **`FrontController` auth + hygiene** - enforce auth on `doGet`/`doPost`, drop the fake `doPut`/`doDelete` check, replace `printStackTrace` with the logger, disable `show_sql`, and remove the demo `DemoS3BucketUpload`.
+- **Microservice refactor (Phase 4, gated).** The capstone: decompose ERS into a microservice. The Spring Boot migration and the Spring Security migration (auth + password handling) belong here rather than as separate steps. Gated on finishing the current hardening + docs and on a reference architecture.
+- **Logging hygiene** - replace the remaining ~50 `printStackTrace` calls (mostly repository `Impl` classes) with the Log4j logger, so errors go through the configured appenders instead of stderr.
 - **Three empty `delete*` stubs** (`deleteApproval`, `deleteRequest`, `deleteReimbursement`): intentional placeholders so every entity has a full CRUD surface; implement when needed, kept on purpose (not dead code).
