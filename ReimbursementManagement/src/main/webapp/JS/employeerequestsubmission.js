@@ -3,10 +3,10 @@ function goToHomepage(){
     let xhr = new XMLHttpRequest()
     xhr.onreadystatechange = function(){
         if(xhr.status === 200 && xhr.readyState ===4){
-            window.open('http://localhost:8080/ReimbursementManagement/employeehomepage.html', '_self')
+            window.open('/ReimbursementManagement/employeehomepage.html', '_self')
         }
     }
-    xhr.open('GET', 'http://localhost:8080/ReimbursementManagement/employeehomepage.html')
+    xhr.open('GET', '/ReimbursementManagement/employeehomepage.html')
     xhr.send()
 }
 homepageButton.addEventListener('click', goToHomepage)
@@ -23,12 +23,12 @@ function submitRequest(){
     let state = document.getElementById('state').value
     let zipCode = document.getElementById('zipCode').value
     let amount = document.getElementById('amount').value
-    let url = 'http://localhost:8080/ReimbursementManagement/app/employee/submit-request?eventTitle=' + eventTitle + '&eventDay=' + eventDay + '&eventMonth=' + eventMonth + '&eventYear=' + eventYear + '&streetNumber=' + streetNumber + '&streetName=' + streetName + '&city=' + city + '&state=' + state + '&zipCode=' + zipCode + '&amount=' + amount
+    let url = '/ReimbursementManagement/app/employee/submit-request?eventTitle=' + eventTitle + '&eventDay=' + eventDay + '&eventMonth=' + eventMonth + '&eventYear=' + eventYear + '&streetNumber=' + streetNumber + '&streetName=' + streetName + '&city=' + city + '&state=' + state + '&zipCode=' + zipCode + '&amount=' + amount
     let xhr = new XMLHttpRequest()
     xhr.onreadystatechange = function(){
         if(xhr.status === 200 && xhr.readyState === 4){
             window.alert('Request was sent successful')
-            window.open('http://localhost:8080/ReimbursementManagement/imageupload.html', '_self')
+            window.open('/ReimbursementManagement/imageupload.html', '_self')
         }
         if(xhr.status === 400 && xhr.readyState === 4){
             alert(xhr.responseText)
@@ -44,10 +44,10 @@ function logout(){
     xhr.onreadystatechange = function(){
         if(xhr.status === 200 && xhr.readyState ===4){
             window.alert('Hope your adventures take you back here and you have a nice day!')
-            window.open('http://localhost:8080/ReimbursementManagement/index.html', '_self')
+            window.open('/ReimbursementManagement/index.html', '_self')
         }
     }
-    xhr.open('GET', 'http://localhost:8080/ReimbursementManagement/app/logout')
+    xhr.open('GET', '/ReimbursementManagement/app/logout')
     xhr.send()
     
 }
