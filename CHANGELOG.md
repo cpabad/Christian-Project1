@@ -61,7 +61,13 @@ Each entry gives the original problem, its root cause, the fix, and the takeaway
 - **Resolution.** Made all frontend calls root-relative (`/ReimbursementManagement/...`) so they are same-origin and host-independent, and removed the `CorsFilter` entirely. A comment in `web.xml` records how to reintroduce CORS - scoped to a specific origin, never a wildcard - if a separately hosted client is ever added.
 - **Takeaway.** CORS is the browser guarding *cross-origin* responses; a wildcard "fixes" the error by removing the guard for everyone. The durable fix is to remove the cross-origin-ness (same-origin, or a dev proxy), and never pair `*` with credentials.
 
+### Security - EmployeeFilter enforced nothing
+- **Symptom.** `EmployeeFilter` (mapped to `/app/employee/*`) had its entire body commented out except a bare `chain.doFilter(...)`, so it applied no access control - any authenticated user, and even unauthenticated non-GET requests, reached employee endpoints.
+- **Root cause.** The intended logic was commented out and itself buggy: it compared the role with `==` (the same trap as `SessionFilter`) and matched only two exact URLs.
+- **Resolution.** Reworked it into the mirror of `ManagerFilter`: `/app/employee/*` now requires a session with the `Employee` role (login URLs exempt), and everyone else is forwarded to the deny view.
+- **Takeaway.** A filter that is mapped but does nothing is worse than none - it reads as protection that is not actually there.
+
 ## Planned / not yet done
 - **Password hashing (BCrypt).** Replace plaintext storage and comparison; requires adding a hashing dependency and updating the seed plus the tests that compare passwords.
 - **EmployeeFilter** is an empty no-op; authorization should be consolidated (again, Spring Security).
-- **Three empty `delete*` stubs** (`deleteApproval`, `deleteRequest`, `deleteReimbursement`): implement or remove.
+- **Three empty `delete*` stubs** (`deleteApproval`, `deleteRequest`, `deleteReimbursement`): intentional placeholders so every entity has a full CRUD surface; implement when needed, kept on purpose (not dead code).
