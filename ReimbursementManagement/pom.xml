@@ -75,6 +75,13 @@
 			<version>8.5.61</version>
 		</dependency>
 
+		<!-- BCryptPasswordEncoder for password hashing; Spring Security 5.x is Java 8 compatible (6.x needs Java 17) -->
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-crypto</artifactId>
+			<version>5.8.5</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
