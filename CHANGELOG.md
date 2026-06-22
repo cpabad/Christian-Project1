@@ -55,8 +55,13 @@ Each entry gives the original problem, its root cause, the fix, and the takeaway
 - **Resolution.** `"Employee".equals(...)`, `contains("/manager/")`, and a `return` after each forward. (The same rule was already correctly enforced by `ManagerFilter`; this is now a corrected second layer.)
 - **Takeaway.** `==` compares references, not text; and after a filter forwards or redirects it must `return` rather than continue the chain. The production-grade path is to stop hand-rolling auth filters and adopt Spring Security.
 
+### Security - CORS was wide open, and the frontend hard-coded its host
+- **Symptom.** `web.xml` enabled Tomcat's `CorsFilter` with `Access-Control-Allow-Origin: *` (any website could call the API), and every frontend call hard-coded `http://localhost:8080/ReimbursementManagement/...`.
+- **Root cause.** The frontend had hit CORS errors during development and the wildcard was the quick way to silence them - but the frontend (HTML/JS/CSS) and the API are served by the *same* WAR, so they are same-origin and CORS was never needed. The wildcard was an unnecessary workaround that shipped; the hard-coded host also broke the frontend anywhere other than `localhost:8080`.
+- **Resolution.** Made all frontend calls root-relative (`/ReimbursementManagement/...`) so they are same-origin and host-independent, and removed the `CorsFilter` entirely. A comment in `web.xml` records how to reintroduce CORS - scoped to a specific origin, never a wildcard - if a separately hosted client is ever added.
+- **Takeaway.** CORS is the browser guarding *cross-origin* responses; a wildcard "fixes" the error by removing the guard for everyone. The durable fix is to remove the cross-origin-ness (same-origin, or a dev proxy), and never pair `*` with credentials.
+
 ## Planned / not yet done
 - **Password hashing (BCrypt).** Replace plaintext storage and comparison; requires adding a hashing dependency and updating the seed plus the tests that compare passwords.
-- **CORS.** Tighten the wildcard `Access-Control-Allow-Origin: *`. The frontend (HTML/JS/CSS) is served by the same WAR as the API, so the two are same-origin and CORS can largely be removed; a dev proxy covers separate-port development.
 - **EmployeeFilter** is an empty no-op; authorization should be consolidated (again, Spring Security).
 - **Three empty `delete*` stubs** (`deleteApproval`, `deleteRequest`, `deleteReimbursement`): implement or remove.

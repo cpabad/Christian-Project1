@@ -48,11 +48,11 @@
                     let xhr = new XMLHttpRequest()
                     loginUsername = document.getElementById('username').value
                     loginPassword = document.getElementById('password').value
-                    let url = 'http://localhost:8080/ReimbursementManagement/app/employee/login?' + 'username=' + loginUsername + '&' + 'password=' + loginPassword
+                    let url = '/ReimbursementManagement/app/employee/login?' + 'username=' + loginUsername + '&' + 'password=' + loginPassword
                     xhr.onreadystatechange = function () {
                         if (xhr.status === 200 && xhr.readyState === 4) {
                             window.alert('Welcome back, ' + loginUsername + '!')
-                            window.open('http://localhost:8080/ReimbursementManagement/employeehomepage.html', '_self')
+                            window.open('/ReimbursementManagement/employeehomepage.html', '_self')
                         }
                         
                     }
@@ -66,11 +66,11 @@
                     let xhr = new XMLHttpRequest()
                     loginUsername = document.getElementById('username').value
                     loginPassword = document.getElementById('password').value
-                    let url = 'http://localhost:8080/ReimbursementManagement/app/manager/login?' + 'username=' + loginUsername + '&' + 'password=' + loginPassword
+                    let url = '/ReimbursementManagement/app/manager/login?' + 'username=' + loginUsername + '&' + 'password=' + loginPassword
                     xhr.onreadystatechange = function () {
                         if (xhr.status === 200 && xhr.readyState === 4) {
                             window.alert('Welcome back, ' + loginUsername + '!')
-                            window.open('http://localhost:8080/ReimbursementManagement/supervisorhomepage.html', '_self')
+                            window.open('/ReimbursementManagement/supervisorhomepage.html', '_self')
                         }
                         if (xhr.status === 400 && xhr.readyState === 4){
                             window.alert('Invalid Credentials')
