@@ -1,49 +1,56 @@
 <!DOCTYPE html>
-    <html>
+<html lang="en" data-theme="light">
 
-        <head>
-            <title>Expense Reimbursement</title>
-            <meta charset="ISO-8859-1"/>
-            <style>
-                .loginDivClass1{
-                text-align: center;
-                display: flex;
-                flex-direction: column;
-                margin-top: 15em;
-                flex-direction: column;
-                border-radius: 0.5em;
-                border-style: groove;
-                border-width: 0.5px;
-                padding: 3em;
-                background-color:rgb(178, 235, 255);
-            }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Expense Reimbursement System</title>
 
-            input, button{
-                border-radius: 0.5em;
-                width: 100%;
-                height: 100px;
-                padding: 0.5em;
-                font-size: 20px;
-                border: 3px solid rgb(127, 223, 255);
-            }
-            
-            body{
-                font-family: Georgia, 'Times New Roman', Times, serif;
-                font-size: 18px;
-            }
-            </style>
-        </head>
+        <!-- Pico.css: classless base styling -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
 
-        <body style="background-color: lightslategrey;">
-            <div class="loginDivClass">
+        <style>
+            /* Deep-teal accent (finance/approval), overriding Pico's default blue */
+            :root {
+                --pico-primary: #0f766e;
+                --pico-primary-background: #0f766e;
+                --pico-primary-hover: #0b5f58;
+                --pico-primary-hover-background: #0b5f58;
+                --pico-primary-focus: rgba(15, 118, 110, 0.3);
+                --pico-primary-underline: rgba(15, 118, 110, 0.5);
+            }
+            h1 {
+                font-family: "Space Grotesk", var(--pico-font-family-sans-serif);
+                letter-spacing: -0.02em;
+                margin-bottom: 0.25rem;
+            }
+            body { display: grid; place-items: center; min-height: 100vh; }
+            .login-card { width: 100%; max-width: 26rem; }
+            .login-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        </style>
+    </head>
+
+    <body>
+        <main class="container">
+            <article class="login-card">
+                <hgroup>
+                    <h1>Expense Reimbursement</h1>
+                    <p>Sign in to submit and track your reimbursement requests.</p>
+                </hgroup>
                 <div id="login-div">
-                    <input placeholder="Email or Username" id="username" required />
-                    <input placeholder="Password" id="password" required /> <br />
-                    <button id="employeeloginButton">Employee Login</button>
-                    <button id="supervisorloginButton">Manager Login</button>
+                    <input placeholder="Email or username" id="username" autocomplete="username" required />
+                    <input placeholder="Password" type="password" id="password" autocomplete="current-password" required />
+                    <div class="login-actions">
+                        <button id="employeeloginButton">Employee Login</button>
+                        <button id="supervisorloginButton" class="secondary">Manager Login</button>
+                    </div>
                 </div>
-            </div>
-            <script>
+            </article>
+        </main>
+        <script>
                 function employeelogin() {
                     let xhr = new XMLHttpRequest()
                     loginUsername = document.getElementById('username').value
@@ -54,14 +61,14 @@
                             window.alert('Welcome back, ' + loginUsername + '!')
                             window.open('/ReimbursementManagement/employeehomepage.html', '_self')
                         }
-                        
+
                     }
                     xhr.open('POST', url)
                     xhr.send()
                 }
                 let employeeloginButton = document.getElementById('employeeloginButton')
                 employeeloginButton.addEventListener('click', employeelogin)
-                
+
                 function supervisorlogin() {
                     let xhr = new XMLHttpRequest()
                     loginUsername = document.getElementById('username').value
@@ -75,15 +82,15 @@
                         if (xhr.status === 400 && xhr.readyState === 4){
                             window.alert('Invalid Credentials')
                         }
-                        
+
                     }
                     xhr.open('POST', url)
                     xhr.send()
                 }
                 let supervisorloginButton = document.getElementById('supervisorloginButton')
                 supervisorloginButton.addEventListener('click', supervisorlogin)
-                
-            </script>
-        </body>
 
-    </html>
+        </script>
+    </body>
+
+</html>
