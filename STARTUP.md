@@ -87,6 +87,7 @@ Point Maven at a JDK 8, then build:
 
 ```
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64    # adjust to your JDK 8 path
+export dburl="jdbc:postgresql://localhost:5432/ers" dbuser=ers dbpassword=ers
 mvn -f ReimbursementManagement/pom.xml clean package
 ```
 
@@ -96,8 +97,14 @@ This produces:
 ReimbursementManagement/target/ReimbursementManagement-0.0.1-SNAPSHOT.war
 ```
 
-(Maven picks its JVM from `JAVA_HOME`. Confirm with `mvn -version` if the build complains
-about the Java version.)
+Why the database variables here? `mvn clean package` runs the integration tests, which connect
+to the database from Step 1 using `dburl`/`dbuser`/`dbpassword`. If they are missing you will
+see 36 errors like `Cannot invoke "org.hibernate.Session.close()" because "s" is null` - that
+means the tests could not reach the database, not that anything is broken. To build the WAR
+without running the tests, add `-DskipTests`.
+
+(Maven picks its JVM from `JAVA_HOME`; confirm with `mvn -version` if the build complains about
+the Java version.)
 
 ### Step 3 - Give Tomcat the database settings
 
@@ -169,6 +176,60 @@ return. That is the frontend and backend talking to each other.
 
 ---
 
+## Connecting to and inspecting the database (psql)
+
+To look inside the database from the terminal (no DBeaver needed), use `psql`. Unlike a saved
+DBeaver connection, `psql` needs the host, database, user, and password **every time**.
+
+Connect:
+
+```
+PGPASSWORD=ers psql -h localhost -U ers -d ers
+```
+
+| DBeaver field | psql flag |
+| --- | --- |
+| Host | `-h localhost` |
+| Database | `-d ers` |
+| Username (role) | `-U ers` |
+| Password | `PGPASSWORD=ers` (or type it at the `Password:` prompt) |
+
+You do NOT need `sudo` for this - `sudo` is only for admin tasks as the `postgres` system
+user. Bare `psql` with no flags fails with `role "<your-username>" does not exist`, because it
+defaults to connecting as your operating-system username to a database of the same name -
+neither of which exists here.
+
+Look around (these backslash commands are psql's version of DBeaver's left-hand tree):
+
+```
+\l                                                -- list databases
+\dn                                               -- list schemas
+\dt "ExpenseReimbursementManagementSystem".*      -- list tables in our schema
+\d  "ExpenseReimbursementManagementSystem".roles  -- describe a table's columns
+\q                                                -- quit
+```
+
+The tables are NOT in the default `public` schema - they live in the case-sensitive schema
+`"ExpenseReimbursementManagementSystem"`, which MUST be double-quoted. Two ways to query:
+
+```sql
+-- (a) qualify the table each time:
+SELECT * FROM "ExpenseReimbursementManagementSystem".roles;
+
+-- (b) or set the search path once, then use bare table names for the rest of the session:
+SET search_path TO "ExpenseReimbursementManagementSystem";
+SELECT * FROM roles;
+SELECT * FROM users;
+```
+
+One-liner straight from the shell (runs the query and exits):
+
+```
+PGPASSWORD=ers psql -h localhost -U ers -d ers -c 'SELECT * FROM "ExpenseReimbursementManagementSystem".roles;'
+```
+
+---
+
 ## Pitfalls - how NOT to crash or confuse the app
 
 1. **Never click "Upload" on the image page.** The upload servlet calls `System.exit(1)` if
@@ -201,3 +262,5 @@ Only Pitfall 1 crashes the server. The rest are harmless and recoverable.
 | 404 on every page/button | WAR not deployed at `/ReimbursementManagement` | Deploy the WAR as `ReimbursementManagement.war` |
 | Login always "Invalid Credentials" | Wrong account/role or DB not seeded | Use `employee2`/`employeePassword`; reload the seed (Step 1) |
 | Server suddenly stopped | The Upload button was clicked | Restart Tomcat; do not use Upload |
+| `mvn` shows 36 errors `Session.close() ... "s" is null` | Tests cannot reach the DB (env vars not exported) | `export dburl/dbuser/dbpassword` before `mvn`, or add `-DskipTests` |
+| `psql: role "<name>" does not exist` | Connected with no `-U`/`-d` (defaulted to your OS user) | `PGPASSWORD=ers psql -h localhost -U ers -d ers` |
