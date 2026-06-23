@@ -12,8 +12,12 @@ import com.revature.model.EventLocation;
 import com.revature.model.Request;
 import com.revature.model.User;
 import com.revature.util.HibernateSessionFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class RequestRepositoryImpl implements RequestRepository {
+
+	private static final Logger LOG = LogManager.getLogger(RequestRepositoryImpl.class);
 
 	@Override
 	public Request findById(int id) {
@@ -28,7 +32,7 @@ public class RequestRepositoryImpl implements RequestRepository {
 					.getSingleResult();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Request persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -52,7 +56,7 @@ public class RequestRepositoryImpl implements RequestRepository {
 					.getSingleResult();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Request persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -71,7 +75,7 @@ public class RequestRepositoryImpl implements RequestRepository {
 			requests = s.createQuery("FROM Request", Request.class).getResultList();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Request persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -92,7 +96,7 @@ public class RequestRepositoryImpl implements RequestRepository {
 					.getResultList();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Request persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -113,7 +117,7 @@ public class RequestRepositoryImpl implements RequestRepository {
 					.getResultList();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Request persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -134,7 +138,7 @@ public class RequestRepositoryImpl implements RequestRepository {
 					.getResultList();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Request persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -152,7 +156,7 @@ public class RequestRepositoryImpl implements RequestRepository {
 			s.save(request);
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Request persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -169,7 +173,7 @@ public class RequestRepositoryImpl implements RequestRepository {
 			s.merge(request);
 			tx.commit();
 		} catch (HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Request persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();

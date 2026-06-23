@@ -83,7 +83,14 @@ Each entry gives the original problem, its root cause, the fix, and the takeaway
 - **`show_sql`.** Turned off Hibernate's SQL echo (`show_sql=false`) - it logged every query (information leak plus noise).
 - **Demo code.** Removed the unused `DemoS3BucketUpload` servlet (dead demo code that also disclosed a developer path and an S3 bucket name).
 
+### Logging - errors now flow through Log4j instead of stderr
+- **Symptom.** 55 `e.printStackTrace()` calls across 17 classes (the 15 repository `Impl`s plus `ConnectionClosers` and `ConnectionFactory`) dumped stack traces straight to `System.err`, bypassing the configured Log4j appenders.
+- **Root cause.** `printStackTrace()` writes to stderr with no level, timestamp, thread, or logger context. In standalone Tomcat that lands in `catalina.out` (or is swallowed) rather than the application's log file, and log aggregators that tail the log files never see it; it also cannot be filtered, routed, or silenced per environment.
+- **Resolution.** Each class now declares a `LogManager.getLogger(...)` field (matching the existing `RequestHelper` convention) and logs with `LOG.error("<operation> failed", e)`. The throwable argument preserves the full stack trace - the diagnostic value is unchanged, but it now carries a message and flows through the appenders into the log file. The two commented-out `printStackTrace` calls in `UploadFile` were left as-is (dead code).
+- **Bonus fix.** `SupervisorApprovalConfirmationRepositoryImpl` called `tx.commit()` in both `catch` blocks instead of `tx.rollback()` - committing a failed transaction. Corrected to `rollback()` to match every sibling repository.
+- **Takeaway.** A stack trace is the right diagnostic; stderr is the wrong destination. Route it through the logging framework so it is leveled, timestamped, and captured where everything else is.
+
 ## Planned / not yet done
 - **Microservice refactor (Phase 4, gated).** The capstone: decompose ERS into a microservice. The Spring Boot migration and the Spring Security migration (auth + password handling) belong here rather than as separate steps. Gated on finishing the current hardening + docs and on a reference architecture.
-- **Logging hygiene** - replace the remaining ~50 `printStackTrace` calls (mostly repository `Impl` classes) with the Log4j logger, so errors go through the configured appenders instead of stderr.
+- **`UploadFile` servlet cleanup.** The file-upload servlet still carries a large commented-out block, hard-coded Windows paths, and - in its live path - `System.err.println(...)` followed by `System.exit(1)`, which would terminate the Tomcat JVM on an AWS error. Out of scope for the logging sweep; flagged for a dedicated cleanup (or removal).
 - **Three empty `delete*` stubs** (`deleteApproval`, `deleteRequest`, `deleteReimbursement`): intentional placeholders so every entity has a full CRUD surface; implement when needed, kept on purpose (not dead code).

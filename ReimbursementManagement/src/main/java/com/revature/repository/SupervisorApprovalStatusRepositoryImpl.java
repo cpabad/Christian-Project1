@@ -6,8 +6,12 @@ import org.hibernate.Transaction;
 
 import com.revature.model.SupervisorApprovalStatus;
 import com.revature.util.HibernateSessionFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class SupervisorApprovalStatusRepositoryImpl implements SupervisorApprovalStatusRepository {
+
+	private static final Logger LOG = LogManager.getLogger(SupervisorApprovalStatusRepositoryImpl.class);
 
 	@Override
 	public SupervisorApprovalStatus findById(int id) {
@@ -22,7 +26,7 @@ public class SupervisorApprovalStatusRepositoryImpl implements SupervisorApprova
 					.getSingleResult();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Supervisor approval status lookup failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -43,7 +47,7 @@ public class SupervisorApprovalStatusRepositoryImpl implements SupervisorApprova
 					.getSingleResult();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Supervisor approval status lookup failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
