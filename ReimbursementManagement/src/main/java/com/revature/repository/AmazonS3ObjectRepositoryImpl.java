@@ -10,8 +10,12 @@ import org.hibernate.Transaction;
 import com.revature.model.AmazonS3Object;
 import com.revature.model.Request;
 import com.revature.util.HibernateSessionFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class AmazonS3ObjectRepositoryImpl implements AmazonS3ObjectRepository{
+
+	private static final Logger LOG = LogManager.getLogger(AmazonS3ObjectRepositoryImpl.class);
 
 	@Override
 	public AmazonS3Object findById(int id) {
@@ -26,7 +30,7 @@ public class AmazonS3ObjectRepositoryImpl implements AmazonS3ObjectRepository{
 					.getSingleResult();
 			tx.commit();
 		} catch (HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Amazon S3 object persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -47,7 +51,7 @@ public class AmazonS3ObjectRepositoryImpl implements AmazonS3ObjectRepository{
 					.getSingleResult();
 			tx.commit();
 		} catch (HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Amazon S3 object persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -68,7 +72,7 @@ public class AmazonS3ObjectRepositoryImpl implements AmazonS3ObjectRepository{
 					.getResultList();
 			tx.commit();
 		} catch (HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Amazon S3 object persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -86,7 +90,7 @@ public class AmazonS3ObjectRepositoryImpl implements AmazonS3ObjectRepository{
 			s.save(object);
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Amazon S3 object persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();

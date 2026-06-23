@@ -3,8 +3,12 @@ package com.revature.util;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ConnectionFactory {
+
+	private static final Logger LOG = LogManager.getLogger(ConnectionFactory.class);
 	
 	private static Connection conn;
 	
@@ -16,7 +20,7 @@ public class ConnectionFactory {
 					System.getenv("dbuser"),
 					System.getenv("dbpassword"));
 		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
+			LOG.error("Failed to load PostgreSQL JDBC driver", e);
 		}
 		return conn;
 	}

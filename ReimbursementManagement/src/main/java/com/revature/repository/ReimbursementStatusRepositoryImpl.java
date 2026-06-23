@@ -6,8 +6,12 @@ import org.hibernate.Transaction;
 
 import com.revature.model.ReimbursementStatus;
 import com.revature.util.HibernateSessionFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ReimbursementStatusRepositoryImpl implements ReimbursementStatusRepository {
+
+	private static final Logger LOG = LogManager.getLogger(ReimbursementStatusRepositoryImpl.class);
 
 	@Override
 	public ReimbursementStatus findById(int id) {
@@ -22,7 +26,7 @@ public class ReimbursementStatusRepositoryImpl implements ReimbursementStatusRep
 					.getSingleResult();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Reimbursement status lookup failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -43,7 +47,7 @@ public class ReimbursementStatusRepositoryImpl implements ReimbursementStatusRep
 					.getSingleResult();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Reimbursement status lookup failed", e);
 			tx.rollback();
 		} finally {
 			s.close();

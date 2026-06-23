@@ -7,8 +7,12 @@ import org.hibernate.Transaction;
 import com.revature.model.CityStatePostal;
 import com.revature.model.EventLocation;
 import com.revature.util.HibernateSessionFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class EventLocationRepositoryImpl implements EventLocationRepository {
+
+	private static final Logger LOG = LogManager.getLogger(EventLocationRepositoryImpl.class);
 
 	@Override
 	public EventLocation findById(int id) {
@@ -23,7 +27,7 @@ public class EventLocationRepositoryImpl implements EventLocationRepository {
 					.getSingleResult();
 			tx.commit();
 		} catch (HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Event location lookup failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -46,7 +50,7 @@ public class EventLocationRepositoryImpl implements EventLocationRepository {
 					.getSingleResult();
 			tx.commit();
 		} catch (HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Event location lookup failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
