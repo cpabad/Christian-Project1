@@ -1,47 +1,68 @@
 <!DOCTYPE html>
+<html lang="en" data-theme="light">
 
-<html>
     <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Expense Reimbursement System</title>
-        <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"/>
-        <link rel="stylesheet" href="./CSS/homepage.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+        <style>
+            :root {
+                --pico-primary: #0f766e;
+                --pico-primary-background: #0f766e;
+                --pico-primary-hover: #0b5f58;
+                --pico-primary-hover-background: #0b5f58;
+                --pico-primary-focus: rgba(15, 118, 110, 0.3);
+                --pico-primary-underline: rgba(15, 118, 110, 0.5);
+            }
+            h1 { font-family: "Space Grotesk", var(--pico-font-family-sans-serif); letter-spacing: -0.02em; margin-bottom: 0.25rem; }
+            nav strong { font-family: "Space Grotesk", var(--pico-font-family-sans-serif); }
+        </style>
     </head>
-    <body style="background-color: lightslategrey;">
-        <div id="home-container-div">
-            <div id="viewUserDiv">
-                <button id="viewUser">View User Information</button>
-            </div>
-            <div>
-                <button id="updateUser">Update User Information</button>
-            </div>
-            <div id="pendingRequestMgrDiv">
-                <button id="viewPendingRequestMgrStatus">View Request With Pending Status</button>
-            </div>
-            <div id="resolvedRequestMgrDiv">
-                <button id="viewResolvedRequestMgrStatus">View Request With Resolved Status</button>
-            </div>
-            <div>
-                <button id="submitRequest">Submit New Request</button>
-            </div>
-            <div>
-                <button id="approval">Approve/Deny Pending Requests</button>
+
+    <body>
+        <header class="container">
+            <nav>
+                <ul><li><strong>Expense Reimbursement</strong> <small>&middot; Supervisor</small></li></ul>
+                <ul><li><button id="logoutButton" class="secondary">Logout</button></li></ul>
+            </nav>
+        </header>
+        <main class="container" id="home-container-div">
+            <hgroup>
+                <h1>Supervisor dashboard</h1>
+                <p>Review and approve your team's requests, or manage your own.</p>
+            </hgroup>
+            <div class="grid">
+                <button id="approval">Approve / Deny Pending Requests</button>
+                <button id="submitRequest" class="secondary">Submit New Request</button>
+                <button id="updateUser" class="secondary">Update User Information</button>
             </div>
             <div id="viewPendingRequestsForOwnEmployeesDiv">
-                <button id="viewPendingRequestsForOwnEmployees">View Employees' Pending Requests</button>
+                <button id="viewPendingRequestsForOwnEmployees" class="outline">View Employees' Pending Requests</button>
             </div>
             <div id="viewAllResolvedRequestsDiv">
-                <button id="viewAllResolvedRequests">View Resolved Requests For All Employees</button>
-            </div>
-            <div id="viewEmployeeManagerDiv">
-                <button id="viewAllEmployeesManagers">View All Employees And Their Managers</button>
+                <button id="viewAllResolvedRequests" class="outline">View Resolved Requests For All Employees</button>
             </div>
             <div id="viewAllRequestsForYourEmployeeDiv">
-                <button id="viewAllRequestsForYourEmployee">View All Requests Made By An Employee</button>
+                <button id="viewAllRequestsForYourEmployee" class="outline">View All Requests Made By An Employee</button>
             </div>
-            <div>
-                <button id="logoutButton">Logout</button>
+            <div id="viewEmployeeManagerDiv">
+                <button id="viewAllEmployeesManagers" class="outline">View All Employees And Their Managers</button>
             </div>
-        </div>
+            <div id="pendingRequestMgrDiv">
+                <button id="viewPendingRequestMgrStatus" class="outline">View My Requests With Pending Status</button>
+            </div>
+            <div id="resolvedRequestMgrDiv">
+                <button id="viewResolvedRequestMgrStatus" class="outline">View My Requests With Resolved Status</button>
+            </div>
+            <div id="viewUserDiv">
+                <button id="viewUser" class="outline">View User Information</button>
+            </div>
+        </main>
         <script src="./JS/supervisorhomepage.js"></script>
     </body>
+
 </html>
