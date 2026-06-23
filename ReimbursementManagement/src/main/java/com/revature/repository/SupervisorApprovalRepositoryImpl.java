@@ -11,8 +11,12 @@ import com.revature.model.Request;
 import com.revature.model.SupervisorApproval;
 import com.revature.model.User;
 import com.revature.util.HibernateSessionFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepository {
+
+	private static final Logger LOG = LogManager.getLogger(SupervisorApprovalRepositoryImpl.class);
 
 	@Override
 	public List<SupervisorApproval> findAll() {
@@ -25,7 +29,7 @@ public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepos
 			approvals = s.createQuery("FROM SupervisorApproval", SupervisorApproval.class).getResultList();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Supervisor approval persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -46,7 +50,7 @@ public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepos
 					.getSingleResult();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Supervisor approval persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -68,7 +72,7 @@ public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepos
 					.getResultList();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Supervisor approval persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -91,7 +95,7 @@ public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepos
 					.getSingleResult();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Supervisor approval persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -109,7 +113,7 @@ public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepos
 			s.save(approval);
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Supervisor approval persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -127,7 +131,7 @@ public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepos
 			s.merge(approval);
 			tx.commit();
 		} catch (HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Supervisor approval persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();

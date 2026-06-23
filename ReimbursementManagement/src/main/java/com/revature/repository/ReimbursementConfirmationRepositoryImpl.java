@@ -10,8 +10,12 @@ import com.revature.model.Reimbursement;
 import com.revature.model.ReimbursementConfirmation;
 import com.revature.model.User;
 import com.revature.util.HibernateSessionFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ReimbursementConfirmationRepositoryImpl implements ReimbursementConfirmationRepository {
+
+	private static final Logger LOG = LogManager.getLogger(ReimbursementConfirmationRepositoryImpl.class);
 
 	@Override
 	public ReimbursementConfirmation findById(int id) {
@@ -26,7 +30,7 @@ public class ReimbursementConfirmationRepositoryImpl implements ReimbursementCon
 					.getSingleResult();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Reimbursement confirmation persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -48,7 +52,7 @@ public class ReimbursementConfirmationRepositoryImpl implements ReimbursementCon
 					.getSingleResult();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Reimbursement confirmation persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -70,7 +74,7 @@ public class ReimbursementConfirmationRepositoryImpl implements ReimbursementCon
 					.getSingleResult();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Reimbursement confirmation persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
