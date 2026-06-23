@@ -9,8 +9,12 @@ import org.hibernate.Transaction;
 
 import com.revature.model.CityStatePostal;
 import com.revature.util.HibernateSessionFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class CityStatePostalRepositoryImpl implements CityStatePostalRepository {
+
+	private static final Logger LOG = LogManager.getLogger(CityStatePostalRepositoryImpl.class);
 
 	@Override
 	public CityStatePostal findByPostal(int postalCode) {
@@ -25,7 +29,7 @@ public class CityStatePostalRepositoryImpl implements CityStatePostalRepository 
 					.getSingleResult();
 			tx.commit();
 		} catch (HibernateException e) {
-			e.printStackTrace();
+			LOG.error("City/state/postal lookup failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -47,7 +51,7 @@ public class CityStatePostalRepositoryImpl implements CityStatePostalRepository 
 					.getResultList();
 			tx.commit();
 		} catch (HibernateException e) {
-			e.printStackTrace();
+			LOG.error("City/state/postal lookup failed", e);
 			tx.rollback();
 		} finally {
 			s.close();

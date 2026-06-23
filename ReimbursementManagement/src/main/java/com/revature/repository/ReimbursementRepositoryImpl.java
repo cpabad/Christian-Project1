@@ -12,8 +12,12 @@ import com.revature.model.Reimbursement;
 import com.revature.model.Request;
 import com.revature.model.User;
 import com.revature.util.HibernateSessionFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ReimbursementRepositoryImpl implements ReimbursementRepository {
+
+	private static final Logger LOG = LogManager.getLogger(ReimbursementRepositoryImpl.class);
 
 	@Override
 	public Reimbursement findById(int id) {
@@ -27,7 +31,7 @@ public class ReimbursementRepositoryImpl implements ReimbursementRepository {
 					.setParameter("id", id)
 					.getSingleResult();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Reimbursement persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -47,7 +51,7 @@ public class ReimbursementRepositoryImpl implements ReimbursementRepository {
 					.setParameter("request", request)
 					.getSingleResult();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Reimbursement persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -68,7 +72,7 @@ public class ReimbursementRepositoryImpl implements ReimbursementRepository {
 					.setParameter("user", requester)
 					.getSingleResult();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Reimbursement persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -89,7 +93,7 @@ public class ReimbursementRepositoryImpl implements ReimbursementRepository {
 			requests = s.createQuery("FROM Reimbursement", Reimbursement.class).getResultList();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Reimbursement persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -107,7 +111,7 @@ public class ReimbursementRepositoryImpl implements ReimbursementRepository {
 			s.save(reimbursement);
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Reimbursement persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -125,7 +129,7 @@ public class ReimbursementRepositoryImpl implements ReimbursementRepository {
 			s.merge(reimbursement);
 			tx.commit();
 		} catch (HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Reimbursement persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();

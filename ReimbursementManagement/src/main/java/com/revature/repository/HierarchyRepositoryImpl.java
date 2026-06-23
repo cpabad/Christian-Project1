@@ -10,8 +10,12 @@ import org.hibernate.Transaction;
 import com.revature.model.Hierarchy;
 import com.revature.model.User;
 import com.revature.util.HibernateSessionFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class HierarchyRepositoryImpl implements HierarchyRepository{
+
+	private static final Logger LOG = LogManager.getLogger(HierarchyRepositoryImpl.class);
 
 	@Override
 	public Hierarchy findById(int id) {
@@ -26,7 +30,7 @@ public class HierarchyRepositoryImpl implements HierarchyRepository{
 					.getSingleResult();
 			tx.commit();
 		} catch (HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Hierarchy persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -48,7 +52,7 @@ public class HierarchyRepositoryImpl implements HierarchyRepository{
 					.getSingleResult();
 			tx.commit();
 		} catch (HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Hierarchy persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -67,7 +71,7 @@ public class HierarchyRepositoryImpl implements HierarchyRepository{
 			relationships = s.createQuery("From Hierarchy", Hierarchy.class).getResultList();
 			tx.commit();
 		} catch (HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Hierarchy persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -86,7 +90,7 @@ public class HierarchyRepositoryImpl implements HierarchyRepository{
 			employees = s.createQuery("From Hierarchy h where h.supervisorUser = :supervisorUser", Hierarchy.class).setParameter("supervisorUser", supervisor).getResultList();
 			tx.commit();
 		} catch (HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Hierarchy persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -105,7 +109,7 @@ public class HierarchyRepositoryImpl implements HierarchyRepository{
 			supervisors = s.createQuery("From Hierarchy h where h.employeeUser = :employeeUser", Hierarchy.class).setParameter("employeeUser", employee).getResultList();
 			tx.commit();
 		} catch (HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Hierarchy persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();

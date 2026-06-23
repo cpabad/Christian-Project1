@@ -9,8 +9,12 @@ import org.hibernate.Transaction;
 import com.revature.model.SupervisorApproval;
 import com.revature.model.SupervisorApprovalConfirmation;
 import com.revature.util.HibernateSessionFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class SupervisorApprovalConfirmationRepositoryImpl implements SupervisorApprovalConfirmationRepository {
+
+	private static final Logger LOG = LogManager.getLogger(SupervisorApprovalConfirmationRepositoryImpl.class);
 
 	@Override
 	public SupervisorApprovalConfirmation findById(int id) {
@@ -25,8 +29,8 @@ public class SupervisorApprovalConfirmationRepositoryImpl implements SupervisorA
 					.getSingleResult();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
-			tx.commit();
+			LOG.error("Supervisor approval confirmation persistence operation failed", e);
+			tx.rollback();
 		} finally {
 			s.close();
 		}
@@ -47,8 +51,8 @@ public class SupervisorApprovalConfirmationRepositoryImpl implements SupervisorA
 					.getSingleResult();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
-			tx.commit();
+			LOG.error("Supervisor approval confirmation persistence operation failed", e);
+			tx.rollback();
 		} finally {
 			s.close();
 		}

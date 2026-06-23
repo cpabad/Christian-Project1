@@ -6,8 +6,12 @@ import org.hibernate.Transaction;
 
 import com.revature.model.RequestStatus;
 import com.revature.util.HibernateSessionFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class RequestStatusRepositoryImpl implements RequestStatusRepository {
+
+	private static final Logger LOG = LogManager.getLogger(RequestStatusRepositoryImpl.class);
 
 	@Override
 	public RequestStatus findById(int id) {
@@ -22,7 +26,7 @@ public class RequestStatusRepositoryImpl implements RequestStatusRepository {
 					.getSingleResult();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Request status lookup failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -43,7 +47,7 @@ public class RequestStatusRepositoryImpl implements RequestStatusRepository {
 					.getSingleResult();
 			tx.commit();
 		} catch(HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Request status lookup failed", e);
 			tx.rollback();
 		} finally {
 			s.close();

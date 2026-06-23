@@ -9,8 +9,12 @@ import org.hibernate.Transaction;
 import com.revature.model.Request;
 import com.revature.model.RequestConfirmation;
 import com.revature.util.HibernateSessionFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class RequestConfirmationRepositoryImpl implements RequestConfirmationRepository {
+
+	private static final Logger LOG = LogManager.getLogger(RequestConfirmationRepositoryImpl.class);
 
 	@Override
 	public RequestConfirmation findById(int id) {
@@ -25,7 +29,7 @@ public class RequestConfirmationRepositoryImpl implements RequestConfirmationRep
 					.getSingleResult();
 			tx.commit();
 		} catch (HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Request confirmation persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -48,7 +52,7 @@ public class RequestConfirmationRepositoryImpl implements RequestConfirmationRep
 					.getSingleResult();
 			tx.commit();
 		} catch (HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Request confirmation persistence operation failed", e);
 			tx.rollback();
 		} finally {
 			s.close();

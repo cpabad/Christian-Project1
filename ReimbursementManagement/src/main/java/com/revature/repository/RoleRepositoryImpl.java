@@ -6,8 +6,12 @@ import org.hibernate.Transaction;
 
 import com.revature.model.Role;
 import com.revature.util.HibernateSessionFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class RoleRepositoryImpl implements RoleRepository {
+
+	private static final Logger LOG = LogManager.getLogger(RoleRepositoryImpl.class);
 
 	@Override
 	public Role findById(int id) {
@@ -22,7 +26,7 @@ public class RoleRepositoryImpl implements RoleRepository {
 					.getSingleResult();
 			tx.commit();
 		} catch (HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Role lookup failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
@@ -43,7 +47,7 @@ public class RoleRepositoryImpl implements RoleRepository {
 					.getSingleResult();
 			tx.commit();
 		} catch (HibernateException e) {
-			e.printStackTrace();
+			LOG.error("Role lookup failed", e);
 			tx.rollback();
 		} finally {
 			s.close();
