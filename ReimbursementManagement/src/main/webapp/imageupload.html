@@ -1,10 +1,26 @@
 <!DOCTYPE html>
+<html lang="en" data-theme="light">
 
-<html>
     <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Expense Reimbursement System</title>
-        <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"/>
-        <link rel="stylesheet" href="./CSS/homepage.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+        <style>
+            :root {
+                --pico-primary: #0f766e;
+                --pico-primary-background: #0f766e;
+                --pico-primary-hover: #0b5f58;
+                --pico-primary-hover-background: #0b5f58;
+                --pico-primary-focus: rgba(15, 118, 110, 0.3);
+                --pico-primary-underline: rgba(15, 118, 110, 0.5);
+            }
+            h1 { font-family: "Space Grotesk", var(--pico-font-family-sans-serif); letter-spacing: -0.02em; margin-bottom: 0.25rem; }
+            nav strong { font-family: "Space Grotesk", var(--pico-font-family-sans-serif); }
+        </style>
         <script>
             function backToHomepage(){
                 let url = '/ReimbursementManagement/employeehomepage.html'
@@ -22,30 +38,41 @@
                 }
                 xhr.open('GET', '/ReimbursementManagement/app/logout')
                 xhr.send()
-                
+
             }
 
             let logoutButton = document.getElementById('logoutButton')
             logoutButton.addEventListener('click', logout)
         </script>
     </head>
-    <body style="background-color: lightslategrey;">
-        <div class="loginDivClass1">
-            <div>
-                <button id="homepage">Home</button>
-            </div>
-            <div id="divSubmitRequest">
-                <form target="_blank" action="upload-file" method="post" enctype="multipart/form-data">
-                    <table>
-                        <td><input type="file" id="myFileField" name="myFile" required></td>
-                        <td><button type="submit" onclick="return backToHomepage()">SUBMIT</button></td>
-                    </table>
-                </form>
-            </div>
-            <div>
-                <button id="logoutButton">Logout</button>
-            </div>
-        </div>
+
+    <body>
+        <header class="container">
+            <nav>
+                <ul><li><strong>Expense Reimbursement</strong></li></ul>
+                <ul>
+                    <li><button id="homepage" class="secondary outline">Home</button></li>
+                    <li><button id="logoutButton" class="secondary">Logout</button></li>
+                </ul>
+            </nav>
+        </header>
+        <main class="container">
+            <hgroup>
+                <h1>Request submitted</h1>
+                <p>Your reimbursement request has been recorded. Attaching a receipt is optional.</p>
+            </hgroup>
+            <a href="/ReimbursementManagement/employeehomepage.html" role="button">Done &mdash; back to homepage</a>
+            <article id="divSubmitRequest">
+                <details>
+                    <summary>Attach a receipt (optional)</summary>
+                    <form target="_blank" action="upload-file" method="post" enctype="multipart/form-data">
+                        <input type="file" id="myFileField" name="myFile" required />
+                        <button type="submit" class="secondary outline" onclick="return backToHomepage()">Upload</button>
+                    </form>
+                </details>
+            </article>
+        </main>
         <script src="./JS/imageupload.js"></script>
     </body>
+
 </html>
