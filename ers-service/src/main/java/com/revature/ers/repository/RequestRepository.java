@@ -24,6 +24,9 @@ public interface RequestRepository extends JpaRepository<Request, Integer> {
 
     List<Request> findByRequester(User requester);
 
+    // navigates Request.requester.userId -> WHERE requesteruserid = ? (handy for a REST path id)
+    List<Request> findByRequester_UserId(int userId);
+
     List<Request> findByRequesterAndRequestStatus_StatusId(User requester, int statusId);
 
     Optional<Request> findByEventDateAndEventLocationAndRequester(
