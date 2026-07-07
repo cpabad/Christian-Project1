@@ -2,12 +2,14 @@ package com.revature.service;
 
 import java.sql.Date;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -15,16 +17,31 @@ import org.mockito.MockitoAnnotations;
 
 import com.revature.model.CityStatePostal;
 import com.revature.model.EventLocation;
+import com.revature.model.Hierarchy;
+import com.revature.model.Reimbursement;
+import com.revature.model.ReimbursementStatus;
 import com.revature.model.Request;
 import com.revature.model.RequestStatus;
 import com.revature.model.Role;
+import com.revature.model.SupervisorApproval;
+import com.revature.model.SupervisorApprovalStatus;
 import com.revature.model.User;
+import com.revature.repository.HierarchyRepositoryImpl;
+import com.revature.repository.ReimbursementRepositoryImpl;
+import com.revature.repository.ReimbursementStatusRepositoryImpl;
 import com.revature.repository.RequestRepositoryImpl;
+import com.revature.repository.SupervisorApprovalRepositoryImpl;
+import com.revature.repository.SupervisorApprovalStatusRepositoryImpl;
 
 public class RequestServiceTest {
-	
+
 	@InjectMocks private static RequestService requestService;
 	@Mock private static RequestRepositoryImpl requestRepository;
+	@Mock private static HierarchyRepositoryImpl hierarchyRepository;
+	@Mock private static SupervisorApprovalRepositoryImpl supervisorApprovalRepository;
+	@Mock private static SupervisorApprovalStatusRepositoryImpl supervisorApprovalStatusRepository;
+	@Mock private static ReimbursementRepositoryImpl reimbursementRepository;
+	@Mock private static ReimbursementStatusRepositoryImpl reimbursementStatusRepository;
 	
 	@BeforeClass
 	public static void setupBeforeClass() {
@@ -99,6 +116,86 @@ public class RequestServiceTest {
 		Request request = new Request();
 		requestService.makeNewRequest(request);
 		Mockito.verify(requestRepository).makeNewRequest(request);
+	}
+
+	@Test
+	public void testSubmitRequestCreatesReimbursementAtChainTop() {
+		// The requester's supervisor has nobody above them: the fan-out creates
+		// both the pending approval and the pending reimbursement record.
+		User emp = new User(1, "emp", "pw", "E", "E", "e@email.com", new Role(2, "Employee"));
+		User mgr = new User(5, "mgr", "pw", "M", "M", "m@email.com", new Role(1, "Supervisor"));
+		EventLocation loc = new EventLocation(1, 100, "Main St", new CityStatePostal(1, "City", "State"));
+		Request newRequest = new Request(100, 250.0, Date.valueOf("2026-01-15"), loc, "Conference", emp, new RequestStatus(2, "Pending"));
+		Request persisted = new Request(9, 250.0, Date.valueOf("2026-01-15"), loc, "Conference", emp, new RequestStatus(2, "Pending"));
+		Hierarchy mgrOverEmp = new Hierarchy(1, mgr, emp);
+		SupervisorApprovalStatus approvalPending = new SupervisorApprovalStatus(2, "Pending");
+		ReimbursementStatus reimbursementPending = new ReimbursementStatus(2, "Pending");
+
+		Mockito.when(requestRepository.findByDateLocationRequester("2026-01-15", loc, emp)).thenReturn(persisted);
+		Mockito.when(hierarchyRepository.findByEmployee(emp)).thenReturn(Arrays.asList(mgrOverEmp));
+		Mockito.when(hierarchyRepository.findByEmployee(mgr)).thenReturn(Collections.<Hierarchy>emptyList());
+		Mockito.when(supervisorApprovalStatusRepository.findById(2)).thenReturn(approvalPending);
+		Mockito.when(reimbursementStatusRepository.findById(2)).thenReturn(reimbursementPending);
+
+		Request result = requestService.submitRequest(newRequest);
+
+		Assert.assertSame(persisted, result);
+		Mockito.verify(requestRepository).makeNewRequest(newRequest);
+		ArgumentCaptor<SupervisorApproval> approvalCaptor = ArgumentCaptor.forClass(SupervisorApproval.class);
+		Mockito.verify(supervisorApprovalRepository).addApproval(approvalCaptor.capture());
+		Assert.assertSame(persisted, approvalCaptor.getValue().getRequest());
+		Assert.assertSame(mgrOverEmp, approvalCaptor.getValue().getHierarchy());
+		Assert.assertSame(approvalPending, approvalCaptor.getValue().getSupervisorApprovalStatus());
+		ArgumentCaptor<Reimbursement> reimbursementCaptor = ArgumentCaptor.forClass(Reimbursement.class);
+		Mockito.verify(reimbursementRepository).addReimbursement(reimbursementCaptor.capture());
+		Assert.assertEquals(250.0, reimbursementCaptor.getValue().getAmount(), 0.001);
+		Assert.assertSame(reimbursementPending, reimbursementCaptor.getValue().getReimbursementStatus());
+	}
+
+	@Test
+	public void testSubmitRequestNoReimbursementBelowChainTop() {
+		// The requester's supervisor reports upward themselves: the fan-out
+		// creates the approval but no reimbursement record yet.
+		User emp = new User(1, "emp", "pw", "E", "E", "e@email.com", new Role(2, "Employee"));
+		User mgr = new User(5, "mgr", "pw", "M", "M", "m@email.com", new Role(1, "Supervisor"));
+		User boss = new User(7, "boss", "pw", "B", "B", "b@email.com", new Role(1, "Supervisor"));
+		EventLocation loc = new EventLocation(1, 100, "Main St", new CityStatePostal(1, "City", "State"));
+		Request newRequest = new Request(100, 250.0, Date.valueOf("2026-01-15"), loc, "Conference", emp, new RequestStatus(2, "Pending"));
+		Request persisted = new Request(9, 250.0, Date.valueOf("2026-01-15"), loc, "Conference", emp, new RequestStatus(2, "Pending"));
+		Hierarchy mgrOverEmp = new Hierarchy(1, mgr, emp);
+		Hierarchy bossOverMgr = new Hierarchy(2, boss, mgr);
+
+		Mockito.when(requestRepository.findByDateLocationRequester("2026-01-15", loc, emp)).thenReturn(persisted);
+		Mockito.when(hierarchyRepository.findByEmployee(emp)).thenReturn(Arrays.asList(mgrOverEmp));
+		Mockito.when(hierarchyRepository.findByEmployee(mgr)).thenReturn(Arrays.asList(bossOverMgr));
+		Mockito.when(supervisorApprovalStatusRepository.findById(2)).thenReturn(new SupervisorApprovalStatus(2, "Pending"));
+
+		Request result = requestService.submitRequest(newRequest);
+
+		Assert.assertSame(persisted, result);
+		Mockito.verify(supervisorApprovalRepository).addApproval(Mockito.any(SupervisorApproval.class));
+		Mockito.verifyNoInteractions(reimbursementRepository);
+		Mockito.verifyNoInteractions(reimbursementStatusRepository);
+	}
+
+	@Test
+	public void testSubmitRequestWithoutSupervisors() {
+		// No hierarchy rows for the requester: the request persists but there is
+		// no approval chain to fan out.
+		User emp = new User(1, "emp", "pw", "E", "E", "e@email.com", new Role(2, "Employee"));
+		EventLocation loc = new EventLocation(1, 100, "Main St", new CityStatePostal(1, "City", "State"));
+		Request newRequest = new Request(100, 250.0, Date.valueOf("2026-01-15"), loc, "Conference", emp, new RequestStatus(2, "Pending"));
+		Request persisted = new Request(9, 250.0, Date.valueOf("2026-01-15"), loc, "Conference", emp, new RequestStatus(2, "Pending"));
+
+		Mockito.when(requestRepository.findByDateLocationRequester("2026-01-15", loc, emp)).thenReturn(persisted);
+		Mockito.when(hierarchyRepository.findByEmployee(emp)).thenReturn(Collections.<Hierarchy>emptyList());
+
+		Request result = requestService.submitRequest(newRequest);
+
+		Assert.assertSame(persisted, result);
+		Mockito.verify(requestRepository).makeNewRequest(newRequest);
+		Mockito.verifyNoInteractions(supervisorApprovalRepository);
+		Mockito.verifyNoInteractions(reimbursementRepository);
 	}
 
 	@Test

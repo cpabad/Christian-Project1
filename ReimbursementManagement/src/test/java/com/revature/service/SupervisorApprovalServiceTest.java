@@ -2,6 +2,7 @@ package com.revature.service;
 
 import java.sql.Date;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.Assert;
@@ -13,21 +14,38 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
+import com.revature.model.ApprovalOutcome;
 import com.revature.model.CityStatePostal;
 import com.revature.model.EventLocation;
 import com.revature.model.Hierarchy;
+import com.revature.model.Reimbursement;
+import com.revature.model.ReimbursementStatus;
 import com.revature.model.Request;
 import com.revature.model.RequestStatus;
 import com.revature.model.Role;
 import com.revature.model.SupervisorApproval;
 import com.revature.model.SupervisorApprovalStatus;
 import com.revature.model.User;
+import com.revature.repository.HierarchyRepositoryImpl;
+import com.revature.repository.ReimbursementRepositoryImpl;
+import com.revature.repository.ReimbursementStatusRepositoryImpl;
+import com.revature.repository.RequestRepositoryImpl;
+import com.revature.repository.RequestStatusRepositoryImpl;
 import com.revature.repository.SupervisorApprovalRepositoryImpl;
+import com.revature.repository.SupervisorApprovalStatusRepositoryImpl;
+import com.revature.repository.UserRepositoryImpl;
 
 public class SupervisorApprovalServiceTest {
 
 	@InjectMocks private static SupervisorApprovalService sas;
 	@Mock private static SupervisorApprovalRepositoryImpl sari;
+	@Mock private static SupervisorApprovalStatusRepositoryImpl sasri;
+	@Mock private static RequestRepositoryImpl rri;
+	@Mock private static RequestStatusRepositoryImpl rsri;
+	@Mock private static ReimbursementRepositoryImpl reri;
+	@Mock private static ReimbursementStatusRepositoryImpl resri;
+	@Mock private static HierarchyRepositoryImpl hri;
+	@Mock private static UserRepositoryImpl uri;
 
 	@BeforeClass
 	public static void setupBeforeClass() {
@@ -168,6 +186,147 @@ public class SupervisorApprovalServiceTest {
 		SupervisorApproval approval = new SupervisorApproval(1, Date.valueOf("2000-01-01"), new Request(), null, null, false);
 		sas.updateApproval(approval);
 		Mockito.verify(sari).updateApproval(approval);
+	}
+
+	@Test
+	public void testResolveApprovalApproved() {
+		// The deciding manager is top of the chain (no supervisor above), no other
+		// approvals pending anywhere: an approval resolves request + reimbursement.
+		User emp = new User(1, "emp", "pw", "E", "E", "e@email.com", new Role(2, "Employee"));
+		User mgr = new User(5, "mgr", "pw", "M", "M", "m@email.com", new Role(1, "Supervisor"));
+		Request request = new Request(9, 100.0, Date.valueOf("2000-01-01"), null, "Conference", emp, new RequestStatus(2, "Pending"));
+		Hierarchy mgrOverEmp = new Hierarchy(1, mgr, emp);
+		SupervisorApproval approval = new SupervisorApproval(1, Date.valueOf("2000-01-01"), request, mgrOverEmp, new SupervisorApprovalStatus(2, "Pending"), false);
+		SupervisorApprovalStatus approvalResolved = new SupervisorApprovalStatus(1, "Resolved");
+		RequestStatus requestResolved = new RequestStatus(1, "Resolved");
+		ReimbursementStatus reimbursementResolved = new ReimbursementStatus(1, "Resolved");
+		Reimbursement reimbursement = new Reimbursement(1, 100.0, Date.valueOf("2000-01-01"), approval, new ReimbursementStatus(2, "Pending"));
+
+		Mockito.when(rri.findById(9)).thenReturn(request);
+		Mockito.when(uri.findById(5)).thenReturn(mgr);
+		Mockito.when(sari.findByRequestRequesterManager(request, emp, mgr)).thenReturn(approval);
+		Mockito.when(sasri.findById(1)).thenReturn(approvalResolved);
+		Mockito.when(hri.findBySupervisor(mgr)).thenReturn(Arrays.asList(mgrOverEmp));
+		Mockito.when(sari.findByRequestAndRequester(request, emp)).thenReturn(Arrays.asList(approval));
+		Mockito.when(hri.findByEmployee(mgr)).thenReturn(Collections.<Hierarchy>emptyList());
+		Mockito.when(rsri.findById(1)).thenReturn(requestResolved);
+		Mockito.when(reri.findByRequest(request)).thenReturn(reimbursement);
+		Mockito.when(resri.findById(1)).thenReturn(reimbursementResolved);
+
+		ApprovalOutcome outcome = sas.resolveApproval(9, 5, true);
+
+		Assert.assertEquals(ApprovalOutcome.APPROVED, outcome);
+		Assert.assertTrue(approval.isApproval());
+		Assert.assertSame(approvalResolved, approval.getSupervisorApprovalStatus());
+		Assert.assertSame(requestResolved, request.getRequestStatus());
+		Assert.assertSame(reimbursementResolved, reimbursement.getReimbursementStatus());
+		Mockito.verify(reri).updateReimbursement(reimbursement);
+		Mockito.verify(sari).updateApproval(approval);
+		Mockito.verify(rri).updateRequest(request);
+	}
+
+	@Test
+	public void testResolveApprovalEscalated() {
+		// A peer supervisor who himself reports upward is still pending: this
+		// manager's approval persists, but the request climbs the chain.
+		User emp = new User(1, "emp", "pw", "E", "E", "e@email.com", new Role(2, "Employee"));
+		User mgr = new User(5, "mgr", "pw", "M", "M", "m@email.com", new Role(1, "Supervisor"));
+		User peer = new User(6, "peer", "pw", "P", "P", "p@email.com", new Role(1, "Supervisor"));
+		User boss = new User(7, "boss", "pw", "B", "B", "b@email.com", new Role(1, "Supervisor"));
+		Request request = new Request(9, 100.0, Date.valueOf("2000-01-01"), null, "Conference", emp, new RequestStatus(2, "Pending"));
+		Hierarchy mgrOverEmp = new Hierarchy(1, mgr, emp);
+		Hierarchy peerOverEmp = new Hierarchy(2, peer, emp);
+		Hierarchy bossOverPeer = new Hierarchy(3, boss, peer);
+		SupervisorApproval approval = new SupervisorApproval(1, Date.valueOf("2000-01-01"), request, mgrOverEmp, new SupervisorApprovalStatus(2, "Pending"), false);
+		// KEEP pending: peer still has to decide, and peer has a supervisor above
+		SupervisorApproval peerApproval = new SupervisorApproval(2, Date.valueOf("2000-01-01"), request, peerOverEmp, new SupervisorApprovalStatus(2, "Pending"), false);
+
+		Mockito.when(rri.findById(9)).thenReturn(request);
+		Mockito.when(uri.findById(5)).thenReturn(mgr);
+		Mockito.when(sari.findByRequestRequesterManager(request, emp, mgr)).thenReturn(approval);
+		Mockito.when(sasri.findById(1)).thenReturn(new SupervisorApprovalStatus(1, "Resolved"));
+		Mockito.when(hri.findBySupervisor(mgr)).thenReturn(Arrays.asList(mgrOverEmp));
+		Mockito.when(sari.findByRequestAndRequester(request, emp)).thenReturn(Arrays.asList(approval, peerApproval));
+		Mockito.when(hri.findByEmployee(mgr)).thenReturn(Collections.<Hierarchy>emptyList());
+		Mockito.when(hri.findByEmployee(peer)).thenReturn(Arrays.asList(bossOverPeer));
+
+		ApprovalOutcome outcome = sas.resolveApproval(9, 5, true);
+
+		Assert.assertEquals(ApprovalOutcome.ESCALATED, outcome);
+		Mockito.verify(sari).updateApproval(approval);
+		// escalation persists only the approval - the request and reimbursement stay untouched
+		Mockito.verify(rri, Mockito.never()).updateRequest(request);
+		Mockito.verifyNoInteractions(reri);
+	}
+
+	@Test
+	public void testResolveApprovalDenied() {
+		// A denial with no pending subordinates resolves the request and
+		// reimbursement immediately - no other manager can overrule it.
+		User emp = new User(1, "emp", "pw", "E", "E", "e@email.com", new Role(2, "Employee"));
+		User mgr = new User(5, "mgr", "pw", "M", "M", "m@email.com", new Role(1, "Supervisor"));
+		Request request = new Request(9, 100.0, Date.valueOf("2000-01-01"), null, "Conference", emp, new RequestStatus(2, "Pending"));
+		Hierarchy mgrOverEmp = new Hierarchy(1, mgr, emp);
+		SupervisorApproval approval = new SupervisorApproval(1, Date.valueOf("2000-01-01"), request, mgrOverEmp, new SupervisorApprovalStatus(2, "Pending"), false);
+		RequestStatus requestResolved = new RequestStatus(1, "Resolved");
+		ReimbursementStatus reimbursementResolved = new ReimbursementStatus(1, "Resolved");
+		Reimbursement reimbursement = new Reimbursement(1, 100.0, Date.valueOf("2000-01-01"), approval, new ReimbursementStatus(2, "Pending"));
+
+		Mockito.when(rri.findById(9)).thenReturn(request);
+		Mockito.when(uri.findById(5)).thenReturn(mgr);
+		Mockito.when(sari.findByRequestRequesterManager(request, emp, mgr)).thenReturn(approval);
+		Mockito.when(sasri.findById(1)).thenReturn(new SupervisorApprovalStatus(1, "Resolved"));
+		Mockito.when(hri.findBySupervisor(mgr)).thenReturn(Arrays.asList(mgrOverEmp));
+		Mockito.when(sari.findByRequestAndRequester(request, emp)).thenReturn(Arrays.asList(approval));
+		Mockito.when(hri.findByEmployee(mgr)).thenReturn(Collections.<Hierarchy>emptyList());
+		Mockito.when(rsri.findById(1)).thenReturn(requestResolved);
+		Mockito.when(reri.findByRequest(request)).thenReturn(reimbursement);
+		Mockito.when(resri.findById(1)).thenReturn(reimbursementResolved);
+
+		ApprovalOutcome outcome = sas.resolveApproval(9, 5, false);
+
+		Assert.assertEquals(ApprovalOutcome.DENIED, outcome);
+		Assert.assertFalse(approval.isApproval());
+		Assert.assertSame(requestResolved, request.getRequestStatus());
+		Assert.assertSame(reimbursementResolved, reimbursement.getReimbursementStatus());
+		Mockito.verify(reri).updateReimbursement(reimbursement);
+		Mockito.verify(sari).updateApproval(approval);
+		Mockito.verify(rri).updateRequest(request);
+	}
+
+	@Test
+	public void testResolveApprovalWaitingOnOthers() {
+		// One of this manager's own direct reports still has a pending approval:
+		// nothing at all is persisted until the subordinate decides.
+		User emp = new User(1, "emp", "pw", "E", "E", "e@email.com", new Role(2, "Employee"));
+		User mgr = new User(5, "mgr", "pw", "M", "M", "m@email.com", new Role(1, "Supervisor"));
+		User sub = new User(6, "sub", "pw", "S", "S", "s@email.com", new Role(1, "Supervisor"));
+		User boss = new User(7, "boss", "pw", "B", "B", "b@email.com", new Role(1, "Supervisor"));
+		Request request = new Request(9, 100.0, Date.valueOf("2000-01-01"), null, "Conference", emp, new RequestStatus(2, "Pending"));
+		Hierarchy mgrOverEmp = new Hierarchy(1, mgr, emp);
+		Hierarchy mgrOverSub = new Hierarchy(2, mgr, sub);
+		Hierarchy subOverEmp = new Hierarchy(3, sub, emp);
+		Hierarchy bossOverMgr = new Hierarchy(4, boss, mgr);
+		SupervisorApproval approval = new SupervisorApproval(1, Date.valueOf("2000-01-01"), request, mgrOverEmp, new SupervisorApprovalStatus(2, "Pending"), false);
+		// KEEP pending: the manager's own subordinate has not decided yet
+		SupervisorApproval subApproval = new SupervisorApproval(2, Date.valueOf("2000-01-01"), request, subOverEmp, new SupervisorApprovalStatus(2, "Pending"), false);
+
+		Mockito.when(rri.findById(9)).thenReturn(request);
+		Mockito.when(uri.findById(5)).thenReturn(mgr);
+		Mockito.when(sari.findByRequestRequesterManager(request, emp, mgr)).thenReturn(approval);
+		Mockito.when(sasri.findById(1)).thenReturn(new SupervisorApprovalStatus(1, "Resolved"));
+		Mockito.when(hri.findBySupervisor(mgr)).thenReturn(Arrays.asList(mgrOverEmp, mgrOverSub));
+		Mockito.when(sari.findByRequestAndRequester(request, emp)).thenReturn(Arrays.asList(approval, subApproval));
+		Mockito.when(hri.findByEmployee(mgr)).thenReturn(Arrays.asList(bossOverMgr));
+		Mockito.when(hri.findByEmployee(sub)).thenReturn(Collections.<Hierarchy>emptyList());
+
+		ApprovalOutcome outcome = sas.resolveApproval(9, 5, true);
+
+		Assert.assertEquals(ApprovalOutcome.WAITING_ON_OTHERS, outcome);
+		// no persistence of any kind on the waiting path
+		Mockito.verify(sari, Mockito.never()).updateApproval(Mockito.any(SupervisorApproval.class));
+		Mockito.verify(rri, Mockito.never()).updateRequest(Mockito.any(Request.class));
+		Mockito.verifyNoInteractions(reri);
 	}
 
 	@Test

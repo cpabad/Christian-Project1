@@ -27,9 +27,13 @@ public class RoleRepositoryImpl implements RoleRepository {
 			tx.commit();
 		} catch (HibernateException e) {
 			LOG.error("Role lookup failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return role;
 	}
@@ -48,9 +52,13 @@ public class RoleRepositoryImpl implements RoleRepository {
 			tx.commit();
 		} catch (HibernateException e) {
 			LOG.error("Role lookup failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return retrievedRole;
 	}

@@ -32,9 +32,13 @@ public class ReimbursementRepositoryImpl implements ReimbursementRepository {
 					.getSingleResult();
 		} catch(HibernateException e) {
 			LOG.error("Reimbursement persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return reimbursement;
 	}
@@ -52,9 +56,13 @@ public class ReimbursementRepositoryImpl implements ReimbursementRepository {
 					.getSingleResult();
 		} catch(HibernateException e) {
 			LOG.error("Reimbursement persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return reimbursement;
 	}
@@ -73,9 +81,13 @@ public class ReimbursementRepositoryImpl implements ReimbursementRepository {
 					.getSingleResult();
 		} catch(HibernateException e) {
 			LOG.error("Reimbursement persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return reimbursement;
 	}
@@ -94,9 +106,13 @@ public class ReimbursementRepositoryImpl implements ReimbursementRepository {
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Reimbursement persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return requests;
 	}
@@ -112,9 +128,13 @@ public class ReimbursementRepositoryImpl implements ReimbursementRepository {
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Reimbursement persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		
 	}
@@ -130,9 +150,13 @@ public class ReimbursementRepositoryImpl implements ReimbursementRepository {
 			tx.commit();
 		} catch (HibernateException e) {
 			LOG.error("Reimbursement persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		
 	}

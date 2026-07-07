@@ -31,9 +31,13 @@ public class HierarchyRepositoryImpl implements HierarchyRepository{
 			tx.commit();
 		} catch (HibernateException e) {
 			LOG.error("Hierarchy persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return hierarchy;
 	}
@@ -53,9 +57,13 @@ public class HierarchyRepositoryImpl implements HierarchyRepository{
 			tx.commit();
 		} catch (HibernateException e) {
 			LOG.error("Hierarchy persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return hierarchy;
 	}
@@ -72,9 +80,13 @@ public class HierarchyRepositoryImpl implements HierarchyRepository{
 			tx.commit();
 		} catch (HibernateException e) {
 			LOG.error("Hierarchy persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return relationships;
 	}
@@ -91,9 +103,13 @@ public class HierarchyRepositoryImpl implements HierarchyRepository{
 			tx.commit();
 		} catch (HibernateException e) {
 			LOG.error("Hierarchy persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return employees;
 	}
@@ -110,9 +126,13 @@ public class HierarchyRepositoryImpl implements HierarchyRepository{
 			tx.commit();
 		} catch (HibernateException e) {
 			LOG.error("Hierarchy persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return supervisors;
 	}
