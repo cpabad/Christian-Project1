@@ -30,9 +30,13 @@ public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepos
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Supervisor approval persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return approvals;
 	}
@@ -51,9 +55,13 @@ public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepos
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Supervisor approval persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return approval;
 	}
@@ -73,9 +81,13 @@ public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepos
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Supervisor approval persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return approvals;
 	}
@@ -96,9 +108,13 @@ public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepos
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Supervisor approval persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return approval;
 	}
@@ -114,9 +130,13 @@ public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepos
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Supervisor approval persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		
 	}
@@ -132,9 +152,13 @@ public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepos
 			tx.commit();
 		} catch (HibernateException e) {
 			LOG.error("Supervisor approval persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 	}
 

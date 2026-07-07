@@ -27,9 +27,13 @@ public class ReimbursementStatusRepositoryImpl implements ReimbursementStatusRep
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Reimbursement status lookup failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return reimbursementStatus;
 	}
@@ -48,9 +52,13 @@ public class ReimbursementStatusRepositoryImpl implements ReimbursementStatusRep
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Reimbursement status lookup failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return reimbursementStatus;
 	}

@@ -27,9 +27,13 @@ public class SupervisorApprovalStatusRepositoryImpl implements SupervisorApprova
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Supervisor approval status lookup failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return sas;
 	}
@@ -48,9 +52,13 @@ public class SupervisorApprovalStatusRepositoryImpl implements SupervisorApprova
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Supervisor approval status lookup failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return sas;
 	}

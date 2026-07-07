@@ -28,9 +28,13 @@ public class EventLocationRepositoryImpl implements EventLocationRepository {
 			tx.commit();
 		} catch (HibernateException e) {
 			LOG.error("Event location lookup failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return eventLocation;
 	}
@@ -51,9 +55,13 @@ public class EventLocationRepositoryImpl implements EventLocationRepository {
 			tx.commit();
 		} catch (HibernateException e) {
 			LOG.error("Event location lookup failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return eventLocation;
 	}

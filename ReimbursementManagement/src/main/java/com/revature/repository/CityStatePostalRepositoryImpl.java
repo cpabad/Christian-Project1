@@ -30,9 +30,13 @@ public class CityStatePostalRepositoryImpl implements CityStatePostalRepository 
 			tx.commit();
 		} catch (HibernateException e) {
 			LOG.error("City/state/postal lookup failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return cityStatePostal;
 	}
@@ -52,9 +56,13 @@ public class CityStatePostalRepositoryImpl implements CityStatePostalRepository 
 			tx.commit();
 		} catch (HibernateException e) {
 			LOG.error("City/state/postal lookup failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return listOfCityStatePostal;
 	}
