@@ -30,9 +30,13 @@ public class SupervisorApprovalConfirmationRepositoryImpl implements SupervisorA
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Supervisor approval confirmation persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return confirmation;
 	}
@@ -52,9 +56,13 @@ public class SupervisorApprovalConfirmationRepositoryImpl implements SupervisorA
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Supervisor approval confirmation persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return confirmation;
 	}

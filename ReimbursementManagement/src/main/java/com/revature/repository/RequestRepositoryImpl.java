@@ -33,9 +33,13 @@ public class RequestRepositoryImpl implements RequestRepository {
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Request persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return request;
 	}
@@ -57,9 +61,13 @@ public class RequestRepositoryImpl implements RequestRepository {
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Request persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return request;
 	}
@@ -76,9 +84,13 @@ public class RequestRepositoryImpl implements RequestRepository {
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Request persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return requests;
 	}
@@ -97,9 +109,13 @@ public class RequestRepositoryImpl implements RequestRepository {
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Request persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return requests;
 	}
@@ -118,9 +134,13 @@ public class RequestRepositoryImpl implements RequestRepository {
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Request persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return requests;
 	}
@@ -139,9 +159,13 @@ public class RequestRepositoryImpl implements RequestRepository {
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Request persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return requests;
 	}
@@ -157,9 +181,13 @@ public class RequestRepositoryImpl implements RequestRepository {
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Request persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 	}
 
@@ -174,9 +202,13 @@ public class RequestRepositoryImpl implements RequestRepository {
 			tx.commit();
 		} catch (HibernateException e) {
 			LOG.error("Request persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 	}
 

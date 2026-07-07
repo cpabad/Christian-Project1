@@ -31,9 +31,13 @@ public class ReimbursementConfirmationRepositoryImpl implements ReimbursementCon
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Reimbursement confirmation persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return rc;
 	}
@@ -53,9 +57,13 @@ public class ReimbursementConfirmationRepositoryImpl implements ReimbursementCon
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Reimbursement confirmation persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return rc;
 	}
@@ -75,9 +83,13 @@ public class ReimbursementConfirmationRepositoryImpl implements ReimbursementCon
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Reimbursement confirmation persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return rc;
 	}

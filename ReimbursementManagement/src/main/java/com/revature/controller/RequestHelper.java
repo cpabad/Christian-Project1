@@ -2,10 +2,7 @@ package com.revature.controller;
 
 import java.io.IOException;
 import java.sql.Date;
-import java.util.ArrayList;
-import java.util.List;
 
-import javax.persistence.NoResultException;
 import javax.persistence.NonUniqueResultException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -14,27 +11,19 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hibernate.NonUniqueObjectException;
-import org.hibernate.ObjectNotFoundException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-
 import com.revature.model.AmazonS3Object;
-import com.revature.model.Hierarchy;
-import com.revature.model.Reimbursement;
+import com.revature.model.ApprovalOutcome;
+import com.revature.model.ProfileUpdateForm;
 import com.revature.model.Request;
-import com.revature.model.SupervisorApproval;
 import com.revature.model.User;
 import com.revature.service.AmazonS3ObjectService;
 //import com.revature.service.AmazonS3ObjectService;
 import com.revature.service.CityStatePostalService;
 import com.revature.service.EventLocationService;
 import com.revature.service.HierarchyService;
-import com.revature.service.ReimbursementService;
-import com.revature.service.ReimbursementStatusService;
 import com.revature.service.RequestService;
 import com.revature.service.RequestStatusService;
 import com.revature.service.SupervisorApprovalService;
-import com.revature.service.SupervisorApprovalStatusService;
 import com.revature.service.UserService;
 
 public class RequestHelper {
@@ -115,301 +104,85 @@ public class RequestHelper {
 		LOG.debug("Post request hitting the servlet mapped to: " + resource);
 		switch(resource) {
 		case "/employee/login":
-			final String loginEmpUsername = request.getParameter("username");
-			final String loginEmpPassword = request.getParameter("password");
-			User employee = null;
-			try {
-				if(loginEmpUsername.contains("@") && loginEmpUsername.contains(".com") || loginEmpUsername.contains(".net")|| loginEmpUsername.contains(".us")|| loginEmpUsername.contains(".edu")|| loginEmpUsername.contains(".co")) {
-					employee = new UserService().findByEmail(loginEmpUsername);
-				} else {
-					employee = new UserService().findByUsername(loginEmpUsername);
-				}
-				if(request.getSession(false) != null) {
-					response.setStatus(400);
-					LOG.debug("Client already has a current session");
-					return "You already have a current session. Logout before continuing.";
-				} else if(employee != null && loginEmpPassword.trim().isEmpty() == false) {
-					if(new BCryptPasswordEncoder().matches(loginEmpPassword, employee.getPassword())) {
-						HttpSession session = request.getSession();
-						session.setAttribute("userId", employee.getUserId());
-						session.setAttribute("username", employee.getUsername());
-						session.setAttribute("email", employee.getEmail());
-						session.setAttribute("role", employee.getRole().getRole());
-						LOG.debug("Login Successful");
-						return employee.getRole().getRole();
-					} else {
-						response.setStatus(400);
-						LOG.debug("Invalid Credentials");
-						return "Invalid Credentials";
-					}
-				} else {
-					response.setStatus(400);
-					LOG.debug("Invalid Credentials");
-					return "Invalid Credentials";
-				}
-			} catch (NoResultException e) {
-				response.setStatus(400);
-				LOG.debug("Invalid Credentials");
-				return "Invalid Credentials";
-			}
 		case "/manager/login":
-			final String loginMgrUsername = request.getParameter("username");
-			final String loginMgrPassword = request.getParameter("password");
-			User manager = null;
-			try {
-				if(loginMgrUsername.contains("@") && loginMgrUsername.contains(".com") || loginMgrUsername.contains(".net")|| loginMgrUsername.contains(".us")|| loginMgrUsername.contains(".edu")|| loginMgrUsername.contains(".co")) {
-					manager = new UserService().findByEmail(loginMgrUsername);
-				} else {
-					manager = new UserService().findByUsername(loginMgrUsername);
-				}
-				if(request.getSession(false) != null) {
-					response.setStatus(400);
-					LOG.debug("Client already has a current session");
-					return "You already have a current session. Logout before continuing.";
-				
-				} else if(manager != null && manager.getRole().getRoleId() == 1 && loginMgrPassword.trim().isEmpty() == false) {
-					if(new BCryptPasswordEncoder().matches(loginMgrPassword, manager.getPassword())) {
-						HttpSession session = request.getSession();
-						session.setAttribute("userId", manager.getUserId());
-						session.setAttribute("username", manager.getUsername());
-						session.setAttribute("email", manager.getEmail());
-						session.setAttribute("role", manager.getRole().getRole());
-						LOG.debug("Login Successful");
-						return manager.getRole().getRole();
-					} else {
-						response.setStatus(400);
-						LOG.debug("Invalid Credentials");
-						return "Invalid Credentials";
-					}
-				} else {
-					response.setStatus(400);
-					LOG.debug("Invalid Credentials");
-					return "Invalid Credentials";
-				}
-			} catch (NoResultException e) {
+			User user = new UserService().authenticate(request.getParameter("username"), request.getParameter("password"));
+			if(user == null || (resource.equals("/manager/login") && user.getRole().getRoleId() != 1)) {
 				response.setStatus(400);
 				LOG.debug("Invalid Credentials");
 				return "Invalid Credentials";
+			} else if(request.getSession(false) != null) {
+				response.setStatus(400);
+				LOG.debug("Client already has a current session");
+				return "You already have a current session. Logout before continuing.";
+			} else {
+				HttpSession session = request.getSession();
+				session.setAttribute("userId", user.getUserId());
+				session.setAttribute("username", user.getUsername());
+				session.setAttribute("email", user.getEmail());
+				session.setAttribute("role", user.getRole().getRole());
+				LOG.debug("Login Successful");
+				return user.getRole().getRole();
 			}
 		case "/manager/update-approval":
-			Request requestWithDecision = new RequestService().findById(Integer.parseInt(request.getParameter("requestId")));
-			SupervisorApproval updatedApproval = new SupervisorApprovalService().findByRequestRequesterManager(requestWithDecision, requestWithDecision.getRequester(), new UserService().findById((Integer) request.getSession(false).getAttribute("userId")));
-			updatedApproval.setApproval(Boolean.parseBoolean(request.getParameter("decision")));
-			updatedApproval.setSupervisorApprovalStatus(new SupervisorApprovalStatusService().findById(1));
-			List<SupervisorApproval> pendingApprovals1 = new SupervisorApprovalService().findByRequestAndRequester(requestWithDecision, requestWithDecision.getRequester());
-			List<User> supervisorsNeededForApproval = new ArrayList<>();
-			int lastPendingApprovalCounter = 0;
-			int pendingApprovalCounter = 0;
-			for(SupervisorApproval a : pendingApprovals1) {
-				if(new HierarchyService().findByEmployee(a.getHierarchy().getSupervisorUser()).isEmpty() == false && a.getSupervisorApprovalStatus().getStatusId() == 2) {
-					supervisorsNeededForApproval.add(a.getHierarchy().getSupervisorUser());
-					lastPendingApprovalCounter++;
-				} else if(new HierarchyService().findEmployeesForSupervisor(new HierarchyService().findBySupervisor(new UserService().findById((Integer) request.getSession(false).getAttribute("userId")))).contains(a.getHierarchy().getSupervisorUser()) && a.getSupervisorApprovalStatus().getStatusId() == 2) {
-					pendingApprovalCounter++;
-				}
-			}
-			if(lastPendingApprovalCounter == 0 && new HierarchyService().findByEmployee(new UserService().findById((Integer) request.getSession(false).getAttribute("userId"))).isEmpty() && updatedApproval.isApproval()) {
-				requestWithDecision.setRequestStatus(new RequestStatusService().findById(1));
-				Reimbursement reimbursementWithDecision = new ReimbursementService().findByRequest(requestWithDecision);
-				reimbursementWithDecision.setReimbursementStatus(new ReimbursementStatusService().findById(1));
-				new ReimbursementService().updateReimbursement(reimbursementWithDecision);
-				new SupervisorApprovalService().updateApproval(updatedApproval);
-				new RequestService().updateRequest(requestWithDecision);
+			ApprovalOutcome outcome = new SupervisorApprovalService().resolveApproval(
+					Integer.parseInt(request.getParameter("requestId")),
+					(Integer) request.getSession(false).getAttribute("userId"),
+					Boolean.parseBoolean(request.getParameter("decision")));
+			switch(outcome) {
+			case APPROVED:
 				return "Reimbursement Request Approved";
-			} else if(pendingApprovalCounter == 0 && updatedApproval.isApproval()) {
-				new SupervisorApprovalService().updateApproval(updatedApproval);
-				return "Request will now be determined by your supervisor";
-			} else if(pendingApprovalCounter == 0) {
-				requestWithDecision.setRequestStatus(new RequestStatusService().findById(1));
-				Reimbursement reimbursementWithDecision = new ReimbursementService().findByRequest(requestWithDecision);
-				reimbursementWithDecision.setReimbursementStatus(new ReimbursementStatusService().findById(1));
-				new ReimbursementService().updateReimbursement(reimbursementWithDecision);
-				new SupervisorApprovalService().updateApproval(updatedApproval);
-				new RequestService().updateRequest(requestWithDecision);
+			case DENIED:
 				return "Reimbursement Request Denied";
-			} else {
+			case ESCALATED:
+				return "Request will now be determined by your supervisor";
+			default:
 				response.setStatus(400);
 				return "Other managers must make their decisions first";
 			}
-			
 		case "/manager/select-employee":
 			return new RequestService().findByRequester(new UserService().findById(Integer.parseInt(request.getParameter("employeeId"))));
 		case "/employee/update-user-information":
-			User updatedUser = new UserService().findById((Integer) request.getSession(false).getAttribute("userId"));
-			if(request.getParameter("confirmusername").trim().isEmpty() == false) {
-				if(request.getParameter("oldusername").trim().isEmpty() == false && updatedUser.getUsername().equals(request.getParameter("oldusername"))) {
-					try {
-						new UserService().findByUsername(request.getParameter("newusername"));
-					} catch (NonUniqueObjectException e) {
-						response.setStatus(400);
-						LOG.debug("Invalid entries");
-						return "Invalid entries. Please try again.";
-					} catch (ObjectNotFoundException e) {
-						updatedUser.setUsername(request.getParameter("newusername"));
-					} catch (NoResultException e) {
-						updatedUser.setUsername(request.getParameter("newusername"));
-					}
-				} else {
-					response.setStatus(400);
-					return "Invalid entries. Please try again.";
-				}
-			}
-			if(request.getParameter("confirmpassword").trim().isEmpty() == false) {
-				if(request.getParameter("oldpassword") != null && new BCryptPasswordEncoder().matches(request.getParameter("oldpassword"), updatedUser.getPassword())) {
-					updatedUser.setPassword(new BCryptPasswordEncoder().encode(request.getParameter("newpassword")));
-				} else {
-					response.setStatus(400);
-					LOG.debug("Invalid entries");
-					return "Invalid entries. Please try again.";
-				}
-			}
-			if(request.getParameter("confirmemail").trim().isEmpty() == false) {
-				if(request.getParameter("oldemail") != null && updatedUser.getEmail().equals(request.getParameter("oldemail"))) {
-					if(request.getParameter("newemail").trim().isEmpty() == false) {
-						try {
-							new UserService().findByEmail(request.getParameter("newemail"));
-						} catch (NonUniqueObjectException e) {
-							response.setStatus(400);
-							LOG.debug("Invalid entries");
-							return "Invalid entries. Please try again.";
-						} catch (ObjectNotFoundException e) {
-							updatedUser.setEmail(request.getParameter("newemail"));
-						} catch (NoResultException e) {
-							updatedUser.setEmail(request.getParameter("newemail"));
-						}
-					}
-				} else {
-					response.setStatus(400);
-					LOG.debug("Invalid entries");
-					return "Invalid entries. Please try again.";
-				}
-			}
-			if(request.getParameter("confirmusername").trim().isEmpty() && request.getParameter("confirmpassword").trim().isEmpty() && request.getParameter("confirmemail").trim().isEmpty()) {
+		case "/manager/update-user-information":
+			ProfileUpdateForm profileUpdateForm = new ProfileUpdateForm(
+					request.getParameter("oldusername"), request.getParameter("newusername"), request.getParameter("confirmusername"),
+					request.getParameter("oldpassword"), request.getParameter("newpassword"), request.getParameter("confirmpassword"),
+					request.getParameter("oldemail"), request.getParameter("newemail"), request.getParameter("confirmemail"));
+			switch(new UserService().updateProfile((Integer) request.getSession(false).getAttribute("userId"), profileUpdateForm)) {
+			case UPDATED:
+				LOG.debug("Update successful");
+				return "Update was successful";
+			case NO_ENTRIES:
 				response.setStatus(400);
 				return "Make some entries before clicking submit";
+			default:
+				response.setStatus(400);
+				LOG.debug("Invalid entries");
+				return "Invalid entries. Please try again.";
 			}
-			new UserService().update(updatedUser);
-			LOG.debug("Update successful");
-			return "Update was successful";
-		case "/employee/submit-request":			
-			Request submitRequest = new Request(
+		case "/employee/submit-request":
+		case "/manager/submit-request":
+			Request newRequest = new Request(
 					100,
 					Double.parseDouble(request.getParameter("amount")),
-					Date.valueOf(request.getParameter("eventYear")+"-"+request.getParameter("eventMonth")+"-"+request.getParameter("eventDay")), 
-					new EventLocationService().findByStreetNumberNamePostalCode(Integer.parseInt(request.getParameter("streetNumber")), request.getParameter("streetName").toUpperCase(), new CityStatePostalService().findByPostal(Integer.parseInt(request.getParameter("zipCode")))), 
-					request.getParameter("eventTitle"), 
-					new UserService().findById((Integer) request.getSession(false).getAttribute("userId")), 
+					Date.valueOf(request.getParameter("eventYear")+"-"+request.getParameter("eventMonth")+"-"+request.getParameter("eventDay")),
+					new EventLocationService().findByStreetNumberNamePostalCode(Integer.parseInt(request.getParameter("streetNumber")), request.getParameter("streetName").toUpperCase(), new CityStatePostalService().findByPostal(Integer.parseInt(request.getParameter("zipCode")))),
+					request.getParameter("eventTitle"),
+					new UserService().findById((Integer) request.getSession(false).getAttribute("userId")),
 					new RequestStatusService().findById(2));
+			Request submittedRequest;
 			try {
-				new RequestService().makeNewRequest(submitRequest);
+				submittedRequest = new RequestService().submitRequest(newRequest);
 			} catch(NonUniqueResultException e) {
 				response.setStatus(400);
 				LOG.debug("Invalid entries");
 				return "Invalid entries. Please try again.";
 			}
-			
-			Request retrievedRequest = new RequestService().findByDateLocationRequester(submitRequest.getEventDate().toString(), submitRequest.getEventLocation(), submitRequest.getRequester());
-			List<Hierarchy> supervisorsForEmployee = new HierarchyService().findByEmployee(new UserService().findById((Integer) request.getSession(false).getAttribute("userId")));
-			for(Hierarchy h : supervisorsForEmployee) {
-				SupervisorApproval newApproval = new SupervisorApproval(100, Date.valueOf("2000-01-01"), retrievedRequest, h, new SupervisorApprovalStatusService().findById(2), false); 
-				new SupervisorApprovalService().addApproval(newApproval);
-				if(new HierarchyService().findByEmployee(h.getSupervisorUser()).isEmpty()) {
-					Reimbursement reimbursement = new Reimbursement(100, retrievedRequest.getAmount(), Date.valueOf("2000-01-01"), newApproval, new ReimbursementStatusService().findById(2));
-					new ReimbursementService().addReimbursement(reimbursement);
-				}
-			}
-			request.getSession(false).setAttribute("retrievedRequest", retrievedRequest);
-			return "Request submitted successfully";
-		case "/manager/submit-request":			
-			Request submitMgrRequest = new Request(
-					100,
-					Double.parseDouble(request.getParameter("amount")),
-					Date.valueOf(request.getParameter("eventYear")+"-"+request.getParameter("eventMonth")+"-"+request.getParameter("eventDay")), 
-					new EventLocationService().findByStreetNumberNamePostalCode(Integer.parseInt(request.getParameter("streetNumber")), request.getParameter("streetName").toUpperCase(), new CityStatePostalService().findByPostal(Integer.parseInt(request.getParameter("zipCode")))), 
-					request.getParameter("eventTitle"), 
-					new UserService().findById((Integer) request.getSession(false).getAttribute("userId")), 
-					new RequestStatusService().findById(2));
-			try {
-				new RequestService().makeNewRequest(submitMgrRequest);
-			} catch(NonUniqueResultException e) {
-				response.setStatus(400);
-				LOG.debug("Invalid entries");
-				return "Invalid entries. Please try again.";
-			}
-			
-			Request retrievedMgrRequests = new RequestService().findByDateLocationRequester(submitMgrRequest.getEventDate().toString(), submitMgrRequest.getEventLocation(), submitMgrRequest.getRequester());
-			List<Hierarchy> supervisorForMgr = new HierarchyService().findByEmployee(new UserService().findById((Integer) request.getSession(false).getAttribute("userId")));
-			for(Hierarchy h : supervisorForMgr) {
-				SupervisorApproval newApproval = new SupervisorApproval(100, Date.valueOf("2000-01-01"), retrievedMgrRequests, h, new SupervisorApprovalStatusService().findById(2), false); 
-				new SupervisorApprovalService().addApproval(newApproval);
-				if(new HierarchyService().findByEmployee(h.getSupervisorUser()).isEmpty()) {
-					Reimbursement reimbursement = new Reimbursement(100, retrievedMgrRequests.getAmount(), Date.valueOf("2000-01-01"), newApproval, new ReimbursementStatusService().findById(2));
-					new ReimbursementService().addReimbursement(reimbursement);
-				}
-			}
-			request.getSession(false).setAttribute("retrievedMgrRequests", retrievedMgrRequests);
+			request.getSession(false).setAttribute("retrievedRequest", submittedRequest);
 			return "Request submitted successfully";
 		case "/upload-file":
 			LOG.debug("Upload successful");
-			new AmazonS3ObjectService().addObject(new AmazonS3Object(100, (String) request.getAttribute("fileName"), (Request) request.getAttribute("retrievedMgrRequests")));
+			new AmazonS3ObjectService().addObject(new AmazonS3Object(100, (String) request.getAttribute("fileName"), (Request) request.getSession(false).getAttribute("retrievedRequest")));
 			return "The file was uploaded successfully! Please exit this page to return to the homepage.";
-		case "/manager/update-user-information":
-			User updatedMgr = new UserService().findById((Integer) request.getSession(false).getAttribute("userId"));
-			if(request.getParameter("confirmusername").trim().isEmpty() == false) {
-				if(request.getParameter("oldusername").trim().isEmpty() == false && updatedMgr.getUsername().equals(request.getParameter("oldusername"))) {
-					try {
-						new UserService().findByUsername(request.getParameter("newusername"));
-					} catch (NonUniqueObjectException e) {
-						response.setStatus(400);
-						LOG.debug("Invalid entries");
-						return "Invalid entries. Please try again.";
-					} catch (ObjectNotFoundException e) {
-						updatedMgr.setUsername(request.getParameter("newusername"));
-					} catch (NoResultException e) {
-						updatedMgr.setUsername(request.getParameter("newusername"));
-					}
-				} else {
-					response.setStatus(400);
-					return "Invalid entries. Please try again.";
-				}
-			}
-			if(request.getParameter("confirmpassword").trim().isEmpty() == false) {
-				if(request.getParameter("oldpassword") != null && new BCryptPasswordEncoder().matches(request.getParameter("oldpassword"), updatedMgr.getPassword())) {
-					updatedMgr.setPassword(new BCryptPasswordEncoder().encode(request.getParameter("newpassword")));
-				} else {
-					response.setStatus(400);
-					LOG.debug("Invalid entries");
-					return "Invalid entries. Please try again.";
-				}
-			}
-			if(request.getParameter("confirmemail").trim().isEmpty() == false) {
-				if(request.getParameter("oldemail") != null && updatedMgr.getEmail().equals(request.getParameter("oldemail"))) {
-					if(request.getParameter("newemail").trim().isEmpty() == false) {
-						try {
-							new UserService().findByEmail(request.getParameter("newemail"));
-						} catch (NonUniqueObjectException e) {
-							response.setStatus(400);
-							LOG.debug("Invalid entries");
-							return "Invalid entries. Please try again.";
-						} catch (ObjectNotFoundException e) {
-							updatedMgr.setEmail(request.getParameter("newemail"));
-						} catch (NoResultException e) {
-							updatedMgr.setEmail(request.getParameter("newemail"));
-						}
-					}
-				} else {
-					response.setStatus(400);
-					LOG.debug("Invalid entries");
-					return "Invalid entries. Please try again.";
-				}
-			}
-			if(request.getParameter("confirmusername").trim().isEmpty() && request.getParameter("confirmpassword").trim().isEmpty() && request.getParameter("confirmemail").trim().isEmpty()) {
-				response.setStatus(400);
-				return "Make some entries before clicking submit";
-			}
-			new UserService().update(updatedMgr);
-			LOG.debug("Update successful");
-			return "Update was successful";
 		case "/logout":
 			if(request.getSession(false) != null) {
 				final String logoutUsername = (String) request.getSession().getAttribute("username");

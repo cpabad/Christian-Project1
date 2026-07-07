@@ -31,9 +31,13 @@ public class AmazonS3ObjectRepositoryImpl implements AmazonS3ObjectRepository{
 			tx.commit();
 		} catch (HibernateException e) {
 			LOG.error("Amazon S3 object persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return object;
 	}
@@ -52,9 +56,13 @@ public class AmazonS3ObjectRepositoryImpl implements AmazonS3ObjectRepository{
 			tx.commit();
 		} catch (HibernateException e) {
 			LOG.error("Amazon S3 object persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return object;
 	}
@@ -73,9 +81,13 @@ public class AmazonS3ObjectRepositoryImpl implements AmazonS3ObjectRepository{
 			tx.commit();
 		} catch (HibernateException e) {
 			LOG.error("Amazon S3 object persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		return objects;
 	}
@@ -91,9 +103,13 @@ public class AmazonS3ObjectRepositoryImpl implements AmazonS3ObjectRepository{
 			tx.commit();
 		} catch(HibernateException e) {
 			LOG.error("Amazon S3 object persistence operation failed", e);
-			tx.rollback();
+			if(tx != null) {
+				tx.rollback();
+			}
 		} finally {
-			s.close();
+			if(s != null) {
+				s.close();
+			}
 		}
 		
 	}
