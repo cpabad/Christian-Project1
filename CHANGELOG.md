@@ -170,6 +170,17 @@ error-path bug across the repository layer, and remove a committed credential.
 - **Symptom.** `ReimbursementManagement/logs/ExpenseReimbursementEventTrialLog.txt` was version-controlled, so every test run dirtied the working tree.
 - **Resolution.** Untracked the file and added `logs/` (and the local `.claude/` tooling directory) to `.gitignore`. Also carried the `.factorypath` refresh that mirrors the 2026-06 dependency bumps (Eclipse annotation-processing metadata; keeping it consistent with the POM).
 
+## 2026-07 - Frontend pass
+
+### Security - stored XSS in every data-rendering page
+- **Symptom.** All 70 `element.innerHTML = <server data>` assignments across `webapp/JS/*.js` rendered user-controlled values (`requestedEvent`, `username`, `email` - all writable via submit-request or profile-update) as live HTML.
+- **Root cause.** `innerHTML` *parses* its input as markup; `textContent` inserts it as inert text. Because the rendered values are user-writable and shown to *other* users, this was stored XSS with privilege escalation: an employee naming an event `<img src=x onerror=...>` executes script in the supervisor's browser on the approval screen, in the supervisor's session.
+- **Resolution.** Mechanical sweep of all 70 assignments to `textContent` (verified none of them built real markup - every value is plain text, so the swap is behavior-identical for legitimate data).
+- **Takeaway.** The sink defines the vulnerability: the same string is safe in `textContent` and executable in `innerHTML`. Defaulting to `textContent` (or a framework that escapes by default) removes the whole class; `innerHTML` should be the exception that demands justification.
+
+### Style - Pico.css facelift merged
+The four `christian/frontend-facelift` commits (login, employee, supervisor pages, image-upload off-ramp; HTML-only) merged to main, so the XSS sweep above applies once to the final markup rather than per-branch.
+
 ## Planned / not yet done
 - **Optional: git history scrub.** The exposed AWS key pair was revoked and all EC2 instances terminated (2026-07-06), so the credential is dead; scrubbing `s3.properties` from git history with `git-filter-repo` (as was done for P3) remains available as pure tidiness.
 - **Microservice refactor (Phase 4) — extracted to its own repo.** The capstone began here in the `ers-service/` module (Spring Boot 3 scaffold → a Role tracer → the Request slice; the branch `christian/microservice` is frozen at that point) and then **moved to a dedicated repository**: [cpabad/Revature931-Project1-Microservice](https://github.com/cpabad/Revature931-Project1-Microservice), where the self-issued-JWT auth slice and the approval-chain slice are done. This repo stays the home of the monolith and the record of its Java 8 refresh; the 2026-07 service extractions make the remaining decomposition mostly mechanical, since the cascades now live in services that port to Spring beans directly.
