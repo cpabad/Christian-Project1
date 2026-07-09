@@ -64,12 +64,12 @@ function viewPendingMgrRequest(){
                     let labelb6 = document.createElement('td')
                     let labelb7 = document.createElement('td')
 
-                    labelb1.innerHTML = r["requestId"]
-                    labelb2.innerHTML = r["amount"]
-                    labelb3.innerHTML = r["eventDate"]
-                    labelb5.innerHTML = r["requestedEvent"]
-                    labelb6.innerHTML = r["requester"]["email"]
-                    labelb7.innerHTML = r["requestStatus"]["status"]
+                    labelb1.textContent = r["requestId"]
+                    labelb2.textContent = r["amount"]
+                    labelb3.textContent = r["eventDate"]
+                    labelb5.textContent = r["requestedEvent"]
+                    labelb6.textContent = r["requester"]["email"]
+                    labelb7.textContent = r["requestStatus"]["status"]
 
                     let date = new Date(r["eventDate"])
                     let eventDate = date.toDateString()
@@ -189,12 +189,12 @@ function viewResolvedMgrRequest(){
                     let labelb6 = document.createElement('td')
                     let labelb7 = document.createElement('td')
 
-                    labelb1.innerHTML = r["requestId"]
-                    labelb2.innerHTML = r["amount"]
-                    labelb3.innerHTML = r["eventDate"]
-                    labelb5.innerHTML = r["requestedEvent"]
-                    labelb6.innerHTML = r["requester"]["email"]
-                    labelb7.innerHTML = r["requestStatus"]["status"]
+                    labelb1.textContent = r["requestId"]
+                    labelb2.textContent = r["amount"]
+                    labelb3.textContent = r["eventDate"]
+                    labelb5.textContent = r["requestedEvent"]
+                    labelb6.textContent = r["requester"]["email"]
+                    labelb7.textContent = r["requestStatus"]["status"]
 
                     let date = new Date(r["eventDate"])
                     let eventDate = date.toDateString()
@@ -314,12 +314,12 @@ function viewUser(){
                 let labelb6 = document.createElement('td')
                 let labelb7 = document.createElement('td')
 
-                labelb1.innerHTML = requests["userId"]
-                labelb2.innerHTML = requests["username"]
-                labelb3.innerHTML = requests["firstName"]
-                labelb5.innerHTML = requests["lastName"]
-                labelb6.innerHTML = requests["email"]
-                labelb7.innerHTML = requests["role"]["role"]
+                labelb1.textContent = requests["userId"]
+                labelb2.textContent = requests["username"]
+                labelb3.textContent = requests["firstName"]
+                labelb5.textContent = requests["lastName"]
+                labelb6.textContent = requests["email"]
+                labelb7.textContent = requests["role"]["role"]
 
                 trBody.append(labelb1)
                 trBody.append(labelb2)
@@ -463,11 +463,11 @@ function viewPendingRequest(){
                     let labelb5 = document.createElement('td')
                     let labelb6 = document.createElement('td')
                     
-                    labelb1.innerHTML = r["request"]["requestId"]
-                    labelb5.innerHTML = r["request"]["requestedEvent"]
-                    labelb6.innerHTML = r["request"]["requester"]["email"]
-                    labelb2.innerHTML = r["request"]["amount"]
-                    labelb3.innerHTML = new Date(r["request"]["eventDate"]).toDateString()
+                    labelb1.textContent = r["request"]["requestId"]
+                    labelb5.textContent = r["request"]["requestedEvent"]
+                    labelb6.textContent = r["request"]["requester"]["email"]
+                    labelb2.textContent = r["request"]["amount"]
+                    labelb3.textContent = new Date(r["request"]["eventDate"]).toDateString()
                     
                     trBody.append(labelb1)
                     trBody.append(labelb5)
@@ -566,7 +566,7 @@ function viewAllResolvedRequest(){
                 labelh3.innerText = 'Event Date'
                 labelh5.innerText = 'Requester Email'
                 labelh6.innerText = 'Amount Requested in USD'
-                labelh7.innerHTML = 'Resolved By'
+                labelh7.textContent = 'Resolved By'
                 trHead.append(labelh1)
                 trHead.append(labelh2)
                 trHead.append(labelh5)
@@ -587,12 +587,12 @@ function viewAllResolvedRequest(){
                     let labelb6 = document.createElement('td')
                     let labelb7 = document.createElement('td')
                     
-                    labelb1.innerHTML = r["request"]["requestId"]
-                    labelb5.innerHTML = r["request"]["requestedEvent"]
-                    labelb6.innerHTML = r["request"]["requester"]["email"]
-                    labelb2.innerHTML = r["request"]["amount"]
-                    labelb3.innerHTML = new Date(r["request"]["eventDate"]).toDateString()
-                    labelb7.innerHTML = r["hierarchy"]["supervisorUser"]["email"]
+                    labelb1.textContent = r["request"]["requestId"]
+                    labelb5.textContent = r["request"]["requestedEvent"]
+                    labelb6.textContent = r["request"]["requester"]["email"]
+                    labelb2.textContent = r["request"]["amount"]
+                    labelb3.textContent = new Date(r["request"]["eventDate"]).toDateString()
+                    labelb7.textContent = r["hierarchy"]["supervisorUser"]["email"]
                     
                     trBody.append(labelb1)
                     trBody.append(labelb5)
@@ -695,8 +695,8 @@ function viewemployeemanager(){
                 let labelb2 = document.createElement('td')
 
 
-                labelb1.innerHTML = r["employeeUser"]["username"]
-                labelb2.innerHTML = r["supervisorUser"]["username"]
+                labelb1.textContent = r["employeeUser"]["username"]
+                labelb2.textContent = r["supervisorUser"]["username"]
 
                 trBody.append(labelb1)
                 trBody.append(labelb2)

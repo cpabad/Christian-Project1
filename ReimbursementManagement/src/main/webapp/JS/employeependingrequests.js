@@ -45,12 +45,12 @@ window.onload = function viewPendingEmpRequest(){
                     let labelb6 = document.createElement('td')
                     let labelb7 = document.createElement('td')
 
-                    labelb1.innerHTML = r["requestId"]
-                    labelb2.innerHTML = r["amount"]
-                    labelb3.innerHTML = r["eventDate"]
-                    labelb5.innerHTML = r["requestedEvent"]
-                    labelb6.innerHTML = r["requester"]["email"]
-                    labelb7.innerHTML = r["requestStatus"]["status"]
+                    labelb1.textContent = r["requestId"]
+                    labelb2.textContent = r["amount"]
+                    labelb3.textContent = r["eventDate"]
+                    labelb5.textContent = r["requestedEvent"]
+                    labelb6.textContent = r["requester"]["email"]
+                    labelb7.textContent = r["requestStatus"]["status"]
 
                     let date = new Date(r["eventDate"])
                     let eventDate = date.toDateString()

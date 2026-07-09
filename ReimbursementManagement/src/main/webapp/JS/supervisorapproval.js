@@ -50,10 +50,10 @@ window.onload = function viewPendingRequest(){
                         xhrDeny.send()
                     })
                     
-                    labelb1.innerHTML = r["request"]["requestId"]
-                    labelb5.innerHTML = r["request"]["requestedEvent"]
-                    labelb6.innerHTML = r["request"]["requester"]["email"]
-                    labelb2.innerHTML = r["request"]["amount"]
+                    labelb1.textContent = r["request"]["requestId"]
+                    labelb5.textContent = r["request"]["requestedEvent"]
+                    labelb6.textContent = r["request"]["requester"]["email"]
+                    labelb2.textContent = r["request"]["amount"]
                     labelb7.append(approvebtn)
                     labelb7.append(denybtn)
                     

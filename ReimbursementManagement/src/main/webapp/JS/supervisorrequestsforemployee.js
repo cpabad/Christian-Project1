@@ -116,11 +116,11 @@ window.onload = function chooseEmployee(){
                                         let innerlabelb5 = document.createElement('td')
                                         let innerlabelb6 = document.createElement('td')
                                         
-                                        innerlabelb1.innerHTML = r1["requestId"]
-                                        innerlabelb5.innerHTML = r1["requestedEvent"]
-                                        innerlabelb3.innerHTML = new Date(r1["eventDate"]).toDateString()
-                                        innerlabelb2.innerHTML = r1["amount"]
-                                        innerlabelb6.innerHTML = r1["requestStatus"]["status"]
+                                        innerlabelb1.textContent = r1["requestId"]
+                                        innerlabelb5.textContent = r1["requestedEvent"]
+                                        innerlabelb3.textContent = new Date(r1["eventDate"]).toDateString()
+                                        innerlabelb2.textContent = r1["amount"]
+                                        innerlabelb6.textContent = r1["requestStatus"]["status"]
                                         
                                         innertrBody.append(innerlabelb1)
                                         innertrBody.append(innerlabelb2)
@@ -150,11 +150,11 @@ window.onload = function chooseEmployee(){
                         xhrSelect.send()
                     })
                     
-                    labelb1.innerHTML = r["userId"]
-                    labelb2.innerHTML = r["username"]
-                    labelb3.innerHTML = r["firstName"]
-                    labelb5.innerHTML = r["lastName"]
-                    labelb6.innerHTML = r["email"]
+                    labelb1.textContent = r["userId"]
+                    labelb2.textContent = r["username"]
+                    labelb3.textContent = r["firstName"]
+                    labelb5.textContent = r["lastName"]
+                    labelb6.textContent = r["email"]
                     labelb7.append(choosebtn)
                                         
                     trBody.append(labelb1)

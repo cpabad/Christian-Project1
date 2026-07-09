@@ -53,12 +53,12 @@ function viewPendingEmpRequest(){
                     let labelb6 = document.createElement('td')
                     let labelb7 = document.createElement('td')
 
-                    labelb1.innerHTML = r["requestId"]
-                    labelb2.innerHTML = r["amount"]
-                    labelb3.innerHTML = r["eventDate"]
-                    labelb5.innerHTML = r["requestedEvent"]
-                    labelb6.innerHTML = r["requester"]["email"]
-                    labelb7.innerHTML = r["requestStatus"]["status"]
+                    labelb1.textContent = r["requestId"]
+                    labelb2.textContent = r["amount"]
+                    labelb3.textContent = r["eventDate"]
+                    labelb5.textContent = r["requestedEvent"]
+                    labelb6.textContent = r["requester"]["email"]
+                    labelb7.textContent = r["requestStatus"]["status"]
 
                     let date = new Date(r["eventDate"])
                     let eventDate = date.toDateString()
@@ -154,12 +154,12 @@ function viewResolvedEmpRequest(){
                     let labelb6 = document.createElement('td')
                     let labelb7 = document.createElement('td')
 
-                    labelb1.innerHTML = r["requestId"]
-                    labelb2.innerHTML = r["amount"]
-                    labelb3.innerHTML = r["eventDate"]
-                    labelb5.innerHTML = r["requestedEvent"]
-                    labelb6.innerHTML = r["requester"]["email"]
-                    labelb7.innerHTML = r["requestStatus"]["status"]
+                    labelb1.textContent = r["requestId"]
+                    labelb2.textContent = r["amount"]
+                    labelb3.textContent = r["eventDate"]
+                    labelb5.textContent = r["requestedEvent"]
+                    labelb6.textContent = r["requester"]["email"]
+                    labelb7.textContent = r["requestStatus"]["status"]
 
                     let date = new Date(r["eventDate"])
                     let eventDate = date.toDateString()
@@ -255,12 +255,12 @@ function viewUser(){
                 let labelb6 = document.createElement('td')
                 let labelb7 = document.createElement('td')
 
-                labelb1.innerHTML = requests["userId"]
-                labelb2.innerHTML = requests["username"]
-                labelb3.innerHTML = requests["firstName"]
-                labelb5.innerHTML = requests["lastName"]
-                labelb6.innerHTML = requests["email"]
-                labelb7.innerHTML = requests["role"]["role"]
+                labelb1.textContent = requests["userId"]
+                labelb2.textContent = requests["username"]
+                labelb3.textContent = requests["firstName"]
+                labelb5.textContent = requests["lastName"]
+                labelb6.textContent = requests["email"]
+                labelb7.textContent = requests["role"]["role"]
 
                 trBody.append(labelb1)
                 trBody.append(labelb2)
