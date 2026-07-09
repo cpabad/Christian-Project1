@@ -1,33 +1,58 @@
 <!DOCTYPE html>
+<html lang="en" data-theme="light">
 
-<html>
     <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Expense Reimbursement System</title>
-        <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"/>
-        <link rel="stylesheet" href="./CSS/homepage.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+        <style>
+            :root {
+                --pico-primary: #0f766e;
+                --pico-primary-background: #0f766e;
+                --pico-primary-hover: #0b5f58;
+                --pico-primary-hover-background: #0b5f58;
+                --pico-primary-focus: rgba(15, 118, 110, 0.3);
+                --pico-primary-underline: rgba(15, 118, 110, 0.5);
+            }
+            h1 { font-family: "Space Grotesk", var(--pico-font-family-sans-serif); letter-spacing: -0.02em; margin-bottom: 0.25rem; }
+            nav strong { font-family: "Space Grotesk", var(--pico-font-family-sans-serif); }
+        </style>
     </head>
-    <body style="background-color: lightslategrey;">
-        <div id="home-container-div">
-            <div>
-                <button id="homepage">Home</button>
-            </div>
-            <div id="tableDiv">
+
+    <body>
+        <header class="container">
+            <nav>
+                <ul><li><strong>Expense Reimbursement</strong> <small>&middot; Supervisor</small></li></ul>
+                <ul>
+                    <li><button id="homepage" class="secondary outline">Home</button></li>
+                    <li><button id="logoutButton" class="secondary">Logout</button></li>
+                </ul>
+            </nav>
+        </header>
+        <main class="container" id="home-container-div">
+            <hgroup>
+                <h1>Approve or deny requests</h1>
+                <p>Requests from your team that are awaiting a decision.</p>
+            </hgroup>
+            <div id="tableDiv" class="overflow-auto">
                 <table id="requestTable">
                     <thead>
                         <tr>
-                            <td>Request Id#</td>
-                            <td>Amount Requested</td>
-                            <td>Event Date</td>
-                            <td>Requested Event</td>
-                            <td>Employee Email</td>
+                            <th scope="col">Request Id#</th>
+                            <th scope="col">Amount Requested</th>
+                            <th scope="col">Event Date</th>
+                            <th scope="col">Requested Event</th>
+                            <th scope="col">Employee Email</th>
                         </tr>
                     </thead>
                 </table>
             </div>
-            <div>
-                <button id="logoutButton">Logout</button>
-            </div>
-        </div>
+        </main>
         <script src="./JS/supervisorapproval.js"></script>
     </body>
+
 </html>

@@ -1,38 +1,66 @@
 <!DOCTYPE html>
+<html lang="en" data-theme="light">
 
-<html>
     <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Expense Reimbursement System</title>
-        <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"/>
-        <link rel="stylesheet" href="./CSS/homepage.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+        <style>
+            :root {
+                --pico-primary: #0f766e;
+                --pico-primary-background: #0f766e;
+                --pico-primary-hover: #0b5f58;
+                --pico-primary-hover-background: #0b5f58;
+                --pico-primary-focus: rgba(15, 118, 110, 0.3);
+                --pico-primary-underline: rgba(15, 118, 110, 0.5);
+            }
+            h1 { font-family: "Space Grotesk", var(--pico-font-family-sans-serif); letter-spacing: -0.02em; margin-bottom: 0.25rem; }
+            nav strong { font-family: "Space Grotesk", var(--pico-font-family-sans-serif); }
+        </style>
     </head>
-    <body style="background-color: lightslategrey;">
-        <div class="update-user-info-div-class">
-            <div>
-                <button id="homepage">Home</button>
-            </div>
-            <div>
-                <div id="updateUsernameDiv">
-                    <input placeholder="Current Username" type="text" name="oldusername" id="oldusername" required>
-                    <input placeholder="New Username (Leave Empty If No Change)" type="text" name="newusername" id="newusername">
-                    <input placeholder="Confirm New Username" type="text" name="newusername" id="confirmnewusername"> 
-                </div> <br>
-                <div id="updatePasswordDiv">
-                    <input placeholder="Current Password" type="text" name="oldpassword" id="oldpassword" required>
-                    <input placeholder="New Password (Leave Empty If No Change)" type="text" name="newpassword" id="newpassword">
-                    <input placeholder="Confirm New Password" type="text" name="newpassword" id="confirmnewpassword">
-                </div> <br>
-                <div id="updateEmailDiv">
-                    <input placeholder="Current Email" type="email" name="oldemail" id="oldemail" required>
-                    <input placeholder="New Email (Leave Empty If No Change)" type="email" name="newemail" id="newemail">
-                    <input placeholder="Confirm New Email" type="text" name="newemail" id="confirmnewemail">
-                </div> <br>
+
+    <body>
+        <header class="container">
+            <nav>
+                <ul><li><strong>Expense Reimbursement</strong> <small>&middot; Supervisor</small></li></ul>
+                <ul>
+                    <li><button id="homepage" class="secondary outline">Home</button></li>
+                    <li><button id="logoutButton" class="secondary">Logout</button></li>
+                </ul>
+            </nav>
+        </header>
+        <main class="container">
+            <hgroup>
+                <h1>Update your information</h1>
+                <p>Leave the new/confirm fields blank for anything you do not want to change.</p>
+            </hgroup>
+            <article>
+                <fieldset id="updateUsernameDiv">
+                    <legend>Username</legend>
+                    <input placeholder="Current Username" type="text" name="oldusername" id="oldusername" required />
+                    <input placeholder="New Username (leave empty if no change)" type="text" name="newusername" id="newusername" />
+                    <input placeholder="Confirm New Username" type="text" name="newusername" id="confirmnewusername" />
+                </fieldset>
+                <fieldset id="updatePasswordDiv">
+                    <legend>Password</legend>
+                    <input placeholder="Current Password" type="password" name="oldpassword" id="oldpassword" required />
+                    <input placeholder="New Password (leave empty if no change)" type="password" name="newpassword" id="newpassword" />
+                    <input placeholder="Confirm New Password" type="password" name="newpassword" id="confirmnewpassword" />
+                </fieldset>
+                <fieldset id="updateEmailDiv">
+                    <legend>Email</legend>
+                    <input placeholder="Current Email" type="email" name="oldemail" id="oldemail" required />
+                    <input placeholder="New Email (leave empty if no change)" type="email" name="newemail" id="newemail" />
+                    <input placeholder="Confirm New Email" type="text" name="newemail" id="confirmnewemail" />
+                </fieldset>
                 <button id="updateUser">Submit Updated Information</button>
-            </div>
-            <div>
-                <button id="logoutButton">Logout</button>
-            </div>
-        </div>
+            </article>
+        </main>
         <script src="./JS/supervisorupdate.js"></script>
     </body>
+
 </html>
