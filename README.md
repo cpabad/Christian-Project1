@@ -2,12 +2,13 @@
 
 ## Project Description
 
-A reimbursement system for a company's employee/ Employees can request reimbursements and managers can approve or deny those requests.
+A reimbursement system for a company's employees. Employees can request reimbursements and managers can approve or deny those requests.
 
 ## Technologies Used
 
 * Java
 * JDBC
+* Hibernate
 * Jackson Databind
 * JUnit
 * Log4J
@@ -63,7 +64,10 @@ Prerequisites: Java 8 (JDK 1.8), Maven, PostgreSQL, and a servlet container (Tom
    is served by the same WAR, on the same origin as the API.
 
 ## Documentation
+* `STARTUP.md` - the complete run-it-locally guide: DB seed, build, deploy, login, the FLOW
+  request trace, pitfalls, and troubleshooting.
 * `CHANGELOG.md` - the 2026 refresh (build fix, test coverage, security hardening) with the
   root cause and fix for each change.
-* `COVERAGE.md` - how the 98% service-layer test coverage is measured and reproduced.
+* `COVERAGE.md` - how the service-layer test coverage (99.46%, enforced at >= 98%) is
+  measured and reproduced.
 * `NORMALIZATION.md` - the proof that the database design is in 5NF.

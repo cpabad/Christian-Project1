@@ -5,36 +5,26 @@ even after a long time away, the User can get it running without remembering the
 
 ---
 
-## Read this first - you are returning, and everything is OK
+## Current state (verified by live run, 2026-07-10)
 
-If you are opening this after a long time away: welcome back. When this refresh began, the
-User was uneasy that old security problems might be lurking in this code. That worry has been
-put to rest. Every issue that was found was fixed, and written down:
+The full record of every change and why is in `CHANGELOG.md` - that is the re-onboarding
+read. The fastest way to re-learn how the app *works* is the FLOW trace (section below):
+start the app and watch it narrate every request, layer by layer.
 
-- The Log4Shell vulnerability in Log4j was patched.
-- Passwords are no longer stored in plaintext - they are hashed with BCrypt.
-- The wide-open CORS policy was removed; the app is served same-origin.
-- The login/authorization filters that silently did nothing were repaired.
-- Out-of-date libraries carrying known CVEs were updated.
-- State-changing requests now require an authenticated session.
-- Errors flow through the logging system instead of being dumped to the console.
+Verified facts as of this refresh:
 
-There are **no known vulnerabilities** in this application today. The full account of what
-changed and why is in `CHANGELOG.md`. You do not need to be afraid of this code. You can open
-it, run it, and trust it.
-
-## Why you should be proud of this
-
-This is not a throwaway exercise. It is a small system that does exactly what it claims:
-
-- **Every advertised claim is true and reproducible.** The "98% service-layer test coverage"
-  is measured by JaCoCo and regenerates on a plain `mvn test`; the number and exactly how it
-  is counted are written out in `COVERAGE.md`.
-- **The database design is genuinely sound** - verified to be in 5NF / BCNF, with the full
-  analysis in `NORMALIZATION.md`.
-- **The whole test suite is green** - 97 tests pass.
-
-The claims hold up to scrutiny. That is something to be proud of.
+- **Test suite: 125/125 green** on a plain `mvn test` (needs the seeded DB + env vars, Step 2).
+- **Service-layer coverage: 99.46% instruction (1298/1305)**, measured by JaCoCo, enforced by
+  a build-failing `check` rule at >= 98%. Methodology and denominator are in `COVERAGE.md`.
+- **Database design: 5NF / BCNF**, full analysis in `NORMALIZATION.md` (15 tables, verified
+  against the live schema).
+- **No known vulnerabilities in this monolith** as of 2026-07-10: the 2026-06 hardening pass
+  (Log4Shell, BCrypt, CORS, dead filters, dependency CVEs, write-path auth) plus the stored-XSS
+  closure of 2026-07-09 (`innerHTML` -> `textContent`, commit 4f3fa57). Two honest caveats:
+  a documented latent *reliability* bug (seed row 2 can 500 the approve path - see ROADMAP
+  Notes; not a vulnerability), and the repository layer swallows Hibernate errors by design
+  (era-authentic anti-pattern, documented). The microservice repo tracks its own open
+  hardening items separately - this claim covers this repo only.
 
 ## What this application does
 
@@ -149,6 +139,67 @@ Employees. The employee screens only work for an account whose role is Employee.
 
 ---
 
+## Watch the app think - the FLOW trace
+
+The single best reorientation tool in this repo. A dedicated `FLOW` logger narrates every
+request as it moves through the layers - which filter passed it, which route matched, which
+service and repository ran, which decisions were taken and why. Instead of reading code cold,
+run the app and watch it explain itself.
+
+**Turn it on/off** - one line in `ReimbursementManagement/src/main/resources/log4j2.xml`:
+
+```xml
+<Logger name="FLOW" level="debug" additivity="false">   <!-- "debug" = on, "off" = silent -->
+```
+
+Rebuild + redeploy after toggling (it ships **on**). FLOW is console-only by design - the
+trace appears in the terminal running `catalina.sh run` and dies with the process; nothing is
+written to log files. (`log4j2-test.xml` ships with it off, so `mvn test` output stays clean.)
+
+**How to read a line:**
+
+```
+FLOW [33ad|7] UserService → authenticate: identifier 'employee2' has no '@' - treating it as a username
+      ^    ^  ^              ^
+      |    |  |              what happened - at decision points, WHY it happened
+      |    |  the class speaking
+      |    hop counter - orders the narrative within one request
+      request id - 4 hex chars; all lines of one request share it
+```
+
+**A real excerpt** (the `employee2` login from this guide's own verification run, trimmed):
+
+```
+FLOW [33ad|1]  SessionFilter → POST /ReimbursementManagement/app/employee/login received; session: none
+FLOW [33ad|3]  EmployeeFilter → role check: EXEMPT (login URL, no session required yet) - continuing down the filter chain
+FLOW [33ad|5]  RequestHelper → routing POST /employee/login through the switch
+FLOW [33ad|7]  UserService → authenticate: identifier 'employee2' has no '@' - treating it as a username
+FLOW [33ad|8]  UserRepositoryImpl → findByUsername: opening a Hibernate session + transaction
+FLOW [33ad|9]  HibernateSessionFactory → first use - building the singleton SessionFactory ... (expensive, happens once)
+FLOW [33ad|15] User → no-arg constructor fired (Hibernate hydration builds entities this way)
+FLOW [33ad|17] UserService → authenticate outcome: BCrypt verified the password for 'employee2' - returning the user
+FLOW [33ad|18] RequestHelper → login decision: SUCCESS for 'employee2' (role Employee) - creating the session
+FLOW [33ad|20] SessionFilter → response on its way to the client - request frame ends
+```
+
+**Reading cues:**
+
+- **Frame boundaries.** `SessionFilter` always speaks first (`... received; session: ...`) and
+  last (`request frame ends`). Everything between those two lines with the same `[id|...]` is
+  one request. Interleaved ids = concurrent requests; follow one id at a time.
+- **Decision points are the payload.** Lines with `check:`, `decision:`, or `outcome:` are
+  where behavior forks (auth pass/fail, route matched, login verdict). When predicting a
+  trace from memory, these - not the hop numbers - are what you should be able to name.
+- **Hydration noise is normal.** Bursts of `no-arg constructor fired` are Hibernate building
+  entities: a big burst on the first-ever query (SessionFactory bootstrap probes the mapped
+  classes), then per-row firing on later queries. Recognize it, don't memorize it.
+
+**Drill tie-in:** FLOW traces are the raw material for the trace-prediction drill - predict
+the narrative from memory, run the real request, diff. Rules live in `CLAUDE.md` under
+"QUESTION-LOG drill cycle".
+
+---
+
 ## Navigating the site (employee)
 
 ```
@@ -170,9 +221,16 @@ hands it to **RequestHelper**, which routes by URL to a **service**, which calls
 **repository**, which uses **Hibernate** to talk to **PostgreSQL**; the JSON answer comes back
 to the page's request.
 
-Tip: open your browser's developer tools (F12) and watch the **Network** tab while you click.
-You will see each button fire a request to `/ReimbursementManagement/app/...` and the JSON
-return. That is the frontend and backend talking to each other.
+> Reading the frontend code? Ignore `JS/login2.js` (a dead hard-coded demo) and the `login()`
+> function in `JS/index.js` (it posts to `/app/login` and targets a button id that no longer
+> exists). The REAL login lives in the inline `<script>` of `index.html`, posting to
+> `/app/employee/login` / `/app/manager/login` as mapped above. Cleanup is queued on the
+> ROADMAP.
+
+Tip - see both halves of a request at once: keep the FLOW trace (section above) in your
+terminal and the browser's **Network** tab (F12) open while you click. The Network tab shows
+the client half (which button fired which `/app/...` call, what JSON came back); FLOW shows
+the server half (what happened between arrival and answer). Same request, both sides.
 
 ---
 
@@ -232,11 +290,12 @@ PGPASSWORD=ers psql -h localhost -U ers -d ers -c 'SELECT * FROM "ExpenseReimbur
 
 ## Pitfalls - how NOT to crash or confuse the app
 
-1. **Never click "Upload" on the image page.** The upload servlet calls `System.exit(1)` if
-   its file-storage call fails - and file storage is not configured for local use - which
-   would shut down the entire Tomcat server (every session, gone). After you submit a request
-   you are automatically taken to the upload page; simply navigate back to the home page.
-   **Do not click Upload.** This is the only action that can truly crash the server.
+1. **The Upload page cannot work locally - expect a 500 if you try.** Uploads go to AWS S3,
+   which is not configured here (the keys were revoked). Historical note: the servlet used to
+   call `System.exit(1)` on an upload failure - one click shut down all of Tomcat. That was
+   fixed in the 2026-07 stabilization pass (`LOG.error` + HTTP 500; the failure now fails the
+   request, never the server - see CHANGELOG). After you submit a request you are auto-taken
+   to the upload page; just navigate back to the home page.
 2. **"You already have a current session" (status 400).** Login refuses if a session already
    exists. Log out cleanly before logging in again; if you get stuck, clear the site's cookies
    or use a private/incognito window.
@@ -249,7 +308,7 @@ PGPASSWORD=ers psql -h localhost -U ers -d ers -c 'SELECT * FROM "ExpenseReimbur
 5. **Wrong Tomcat version.** Tomcat 10+ will not run this app (see the note up top). Use 9/8.5.
 6. **Pages erroring after a while?** Your session likely timed out. Just log in again.
 
-Only Pitfall 1 crashes the server. The rest are harmless and recoverable.
+None of these crash the server anymore - all are harmless and recoverable.
 
 ---
 
@@ -261,6 +320,6 @@ Only Pitfall 1 crashes the server. The rest are harmless and recoverable.
 | App loads but every table is empty | DB env vars not seen by Tomcat | Put them in `<tomcat>/bin/setenv.sh` (Step 3) |
 | 404 on every page/button | WAR not deployed at `/ReimbursementManagement` | Deploy the WAR as `ReimbursementManagement.war` |
 | Login always "Invalid Credentials" | Wrong account/role or DB not seeded | Use `employee2`/`employeePassword`; reload the seed (Step 1) |
-| Server suddenly stopped | The Upload button was clicked | Restart Tomcat; do not use Upload |
+| Upload returns 500 | S3 is not configured locally (keys revoked) | Expected; navigate back - the server keeps running |
 | `mvn` shows 36 errors `Session.close() ... "s" is null` | Tests cannot reach the DB (env vars not exported) | `export dburl/dbuser/dbpassword` before `mvn`, or add `-DskipTests` |
 | `psql: role "<name>" does not exist` | Connected with no `-U`/`-d` (defaulted to your OS user) | `PGPASSWORD=ers psql -h localhost -U ers -d ers` |

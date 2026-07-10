@@ -1,8 +1,8 @@
 # Test Coverage
 
 ## Headline
-The service layer (`com.revature.service`) has **98.95% instruction coverage**
-(1034 / 1045 instructions), measured with JaCoCo across a suite of **124 passing tests**.
+The service layer (`com.revature.service`) has **99.46% instruction coverage**
+(1298 / 1305 instructions), measured with JaCoCo across a suite of **125 passing tests**.
 
 ## Scope and denominator
 - **Denominator:** all 15 classes in the `com.revature.service` package. **No exclusions.**
@@ -25,7 +25,7 @@ The service layer (`com.revature.service`) has **98.95% instruction coverage**
 ## Unit vs integration
 The repository layer is covered separately by integration tests that run against a real, seeded
 PostgreSQL database (`ers_script.sql`). Those exercise the SQL and Hibernate mappings; the service
-unit tests exercise business logic in isolation. The 98.06% figure is the service (unit) layer.
+unit tests exercise business logic in isolation. The 99.46% figure is the service (unit) layer.
 
 ## Reproduce it
     cd ReimbursementManagement
@@ -39,7 +39,7 @@ plain `mvn test` regenerates the report. Per-package and per-class numbers are i
 ## Enforcement
 The claim is guarded, not just reported: a JaCoCo `check` rule (also bound to the test phase)
 fails the build if instruction coverage for `com.revature.service` drops below **98%**. Verified
-both ways: the suite passes at the current 98.95%, and temporarily raising the minimum above it
+both ways: the suite passes at the current 99.46%, and temporarily raising the minimum above it
 produces `Rule violated for package com.revature.service` and a build failure.
 
 ## Metric note
