@@ -8,6 +8,7 @@ import com.revature.model.RequestStatus;
 import com.revature.util.HibernateSessionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.revature.util.FlowTrace;
 
 public class RequestStatusRepositoryImpl implements RequestStatusRepository {
 
@@ -19,6 +20,7 @@ public class RequestStatusRepositoryImpl implements RequestStatusRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(RequestStatusRepositoryImpl.class, "findById: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			requestStatus = s.createQuery("FROM RequestStatus s WHERE s.statusId = :id", RequestStatus.class)
@@ -44,6 +46,7 @@ public class RequestStatusRepositoryImpl implements RequestStatusRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(RequestStatusRepositoryImpl.class, "findByStatus: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			requestStatus = s.createQuery("FROM RequestStatus s WHERE s.status = :status", RequestStatus.class)

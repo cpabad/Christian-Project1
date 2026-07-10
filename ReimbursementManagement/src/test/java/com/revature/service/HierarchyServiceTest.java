@@ -33,6 +33,17 @@ public class HierarchyServiceTest {
 	}
 	
 	@Test
+	public void testFindAll() {
+		User mockUser1 = new User(1, "Star Platinum", "Stand Proud", "Jotaro", "Kujo", "sp@email.com", new Role(1, "Being awesome"));
+		User mockUser2 = new User(2, "Stone Ocean", "Not yet aired", "Jolene", "Kujo", "so@email.com", new Role(2, "Jailed in Florida"));
+		Mockito.when(hierarchyRepository.findAll()).thenReturn(Arrays.asList(
+				new Hierarchy(1, mockUser1, mockUser2)));
+		List<Hierarchy> retrievedHierarchies = hierarchyService.findAll();
+		Assert.assertEquals(1, retrievedHierarchies.size());
+		Assert.assertEquals("Star Platinum", retrievedHierarchies.get(0).getSupervisorUser().getUsername());
+	}
+
+	@Test
 	public void testFindById() {
 		User mockUser1 = new User(1, "Star Platinum", "Stand Proud", "Jotaro", "Kujo", "sp@email.com", new Role(1, "Being awesome"));
 		User mockUser2 = new User(2, "Stone Ocean", "Not yet aired", "Jolene", "Kujo", "so@email.com", new Role(2, "Jailed in Florida"));

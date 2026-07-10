@@ -9,6 +9,7 @@ import com.revature.model.EventLocation;
 import com.revature.util.HibernateSessionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.revature.util.FlowTrace;
 
 public class EventLocationRepositoryImpl implements EventLocationRepository {
 
@@ -20,6 +21,7 @@ public class EventLocationRepositoryImpl implements EventLocationRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(EventLocationRepositoryImpl.class, "findById: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			eventLocation = s.createQuery("FROM EventLocation e WHERE e.locationId = :locationId", EventLocation.class)
@@ -45,6 +47,7 @@ public class EventLocationRepositoryImpl implements EventLocationRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(EventLocationRepositoryImpl.class, "findByStreetNumberNamePostalCode: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			eventLocation = s.createQuery("FROM EventLocation e WHERE e.street_number = :streetNumber AND e.street_name = :streetName AND e.cityStatePostal = :postalCode", EventLocation.class)

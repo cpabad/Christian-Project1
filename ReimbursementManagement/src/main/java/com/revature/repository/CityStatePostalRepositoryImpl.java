@@ -11,6 +11,7 @@ import com.revature.model.CityStatePostal;
 import com.revature.util.HibernateSessionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.revature.util.FlowTrace;
 
 public class CityStatePostalRepositoryImpl implements CityStatePostalRepository {
 
@@ -22,6 +23,7 @@ public class CityStatePostalRepositoryImpl implements CityStatePostalRepository 
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(CityStatePostalRepositoryImpl.class, "findByPostal: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			cityStatePostal = s.createQuery("FROM CityStatePostal csp WHERE csp.postalCode = :postalCode", CityStatePostal.class)
@@ -47,6 +49,7 @@ public class CityStatePostalRepositoryImpl implements CityStatePostalRepository 
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(CityStatePostalRepositoryImpl.class, "findByCityAndState: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			listOfCityStatePostal = s.createQuery("FROM CityStatePostal csp WHERE csp.city = :city AND csp.state = :state", CityStatePostal.class)

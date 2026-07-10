@@ -1,6 +1,7 @@
 package com.revature.model;
 
 import java.sql.Date;
+import com.revature.util.FlowTrace;
 
 /**
  * A model representing an amount rewarded for an approved reimbursement request.
@@ -110,6 +111,7 @@ public class ReimbursementAwarded {
 	public ReimbursementAwarded(int awardId, double amount, Date dateAwarded, SupervisorApproval finalApproval,
 			ReimbursementStatus reimbursementStatus) {
 		super();
+		FlowTrace.log(ReimbursementAwarded.class, "constructor (awardId, amount, dateAwarded, finalApproval, reimbursementStatus) fired");
 		this.awardId = awardId;
 		this.amount = amount;
 		this.dateAwarded = dateAwarded;
@@ -118,6 +120,7 @@ public class ReimbursementAwarded {
 	}
 	public ReimbursementAwarded() {
 		super();
+		FlowTrace.log(ReimbursementAwarded.class, "no-arg constructor fired (Hibernate hydration builds entities this way)");
 	}
 
 }

@@ -8,6 +8,7 @@ import com.revature.model.User;
 import com.revature.util.HibernateSessionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.revature.util.FlowTrace;
 
 public class UserRepositoryImpl implements UserRepository {
 
@@ -19,6 +20,7 @@ public class UserRepositoryImpl implements UserRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(UserRepositoryImpl.class, "findById: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			user = s.createQuery("FROM User user WHERE user.userId = :userId", User.class)
@@ -44,6 +46,7 @@ public class UserRepositoryImpl implements UserRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(UserRepositoryImpl.class, "findByUsername: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			user = s.createQuery("FROM User user WHERE user.username = :username", User.class)
@@ -69,6 +72,7 @@ public class UserRepositoryImpl implements UserRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(UserRepositoryImpl.class, "findByEmail: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			user = s.createQuery("FROM User user WHERE user.email = :email", User.class)
@@ -99,6 +103,7 @@ public class UserRepositoryImpl implements UserRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(UserRepositoryImpl.class, "updateEmployee: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			s.merge(employee);

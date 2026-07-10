@@ -12,6 +12,7 @@ import com.revature.model.User;
 import com.revature.util.HibernateSessionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.revature.util.FlowTrace;
 
 public class HierarchyRepositoryImpl implements HierarchyRepository{
 
@@ -23,6 +24,7 @@ public class HierarchyRepositoryImpl implements HierarchyRepository{
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(HierarchyRepositoryImpl.class, "findById: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			hierarchy = s.createQuery("FROM Hierarchy hierarchy WHERE hierarchy.hierarchyId = :hierarchyId", Hierarchy.class)
@@ -48,6 +50,7 @@ public class HierarchyRepositoryImpl implements HierarchyRepository{
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(HierarchyRepositoryImpl.class, "findBySupervisorAndEmployee: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			hierarchy = s.createQuery("FROM Hierarchy hierarchy WHERE hierarchy.supervisorUser = :supervisorUser AND hierarchy.employeeUser = :employeeUser", Hierarchy.class)
@@ -74,6 +77,7 @@ public class HierarchyRepositoryImpl implements HierarchyRepository{
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(HierarchyRepositoryImpl.class, "findAll: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			relationships = s.createQuery("From Hierarchy", Hierarchy.class).getResultList();
@@ -97,6 +101,7 @@ public class HierarchyRepositoryImpl implements HierarchyRepository{
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(HierarchyRepositoryImpl.class, "findBySupervisor: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			employees = s.createQuery("From Hierarchy h where h.supervisorUser = :supervisorUser", Hierarchy.class).setParameter("supervisorUser", supervisor).getResultList();
@@ -120,6 +125,7 @@ public class HierarchyRepositoryImpl implements HierarchyRepository{
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(HierarchyRepositoryImpl.class, "findByEmployee: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			supervisors = s.createQuery("From Hierarchy h where h.employeeUser = :employeeUser", Hierarchy.class).setParameter("employeeUser", employee).getResultList();

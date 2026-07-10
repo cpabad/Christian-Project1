@@ -4,6 +4,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import com.revature.util.FlowTrace;
 
 /**
  * This model represents an event's city, state and postal code location.
@@ -86,12 +87,14 @@ public class CityStatePostal {
 	}
 	public CityStatePostal(int postalCode, String city, String state) {
 		super();
+		FlowTrace.log(CityStatePostal.class, "constructor (postalCode, city, state) fired");
 		this.postalCode = postalCode;
 		this.city = city;
 		this.state = state;
 	}
 	public CityStatePostal() {
 		super();
+		FlowTrace.log(CityStatePostal.class, "no-arg constructor fired (Hibernate hydration builds entities this way)");
 	}
 	
 

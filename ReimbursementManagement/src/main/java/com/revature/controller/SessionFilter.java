@@ -13,8 +13,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.revature.util.FlowTrace;
+
 /**
  * Servlet Filter implementation class SessionFilter
+ *
+ * Mapped to /* so it is the FIRST filter every request meets - which makes it the owner of
+ * the FLOW trace frame: begin() here, end() in the finally, so the request id spans the whole
+ * chain (filters, forwards, servlet, services) and pooled threads never leak a stale id.
  */
 public class SessionFilter implements Filter {
 
@@ -36,21 +42,34 @@ public class SessionFilter implements Filter {
 	 * @see Filter#doFilter(ServletRequest, ServletResponse, FilterChain)
 	 */
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-		
+
 		HttpServletRequest httpRequest = (HttpServletRequest) request;
-		HttpSession session = httpRequest.getSession(false);
-		if(session == null && httpRequest.getRequestURI().equals("/ReimbursementManagement/") == false && httpRequest.getMethod().equals("GET")) {
-			request.getRequestDispatcher("app/login").forward(httpRequest, response);
-			return;
+		final boolean flowOwner = FlowTrace.begin();
+		try {
+			HttpSession session = httpRequest.getSession(false);
+			FlowTrace.log(SessionFilter.class, httpRequest.getMethod() + " " + httpRequest.getRequestURI()
+					+ " received; session: " + (session == null ? "none" : "active (role=" + session.getAttribute("role") + ")"));
+			if(session == null && httpRequest.getRequestURI().equals("/ReimbursementManagement/") == false && httpRequest.getMethod().equals("GET")) {
+				FlowTrace.log(SessionFilter.class, "auth check: FAIL (no session on a non-landing GET) - forwarding to app/login view");
+				request.getRequestDispatcher("app/login").forward(httpRequest, response);
+				return;
 //		} else if(session != null && role == "Employee" && httpRequest.getRequestURI().equals("/ReimbursementManagement/upload-file")) {
 //			System.out.println("Hello!");
 //			RequestDispatcher dispatcher = request.getRequestDispatcher("app/login");
 //			dispatcher.forward(httpRequest, response);
-		} else if(session != null && httpRequest.getRequestURI().contains("/manager/") && "Employee".equals((String) session.getAttribute("role"))) {
-			request.getRequestDispatcher("app/deny").forward(httpRequest, response);
-			return;
+			} else if(session != null && httpRequest.getRequestURI().contains("/manager/") && "Employee".equals((String) session.getAttribute("role"))) {
+				FlowTrace.log(SessionFilter.class, "role check: FAIL (Employee role on a /manager/ URL) - forwarding to app/deny");
+				request.getRequestDispatcher("app/deny").forward(httpRequest, response);
+				return;
+			}
+			FlowTrace.log(SessionFilter.class, "auth check: PASS - continuing down the filter chain");
+			chain.doFilter(request, response);
+		} finally {
+			if (flowOwner) {
+				FlowTrace.log(SessionFilter.class, "response on its way to the client - request frame ends");
+				FlowTrace.end();
+			}
 		}
-		chain.doFilter(request, response);
 	}
 
 	/**

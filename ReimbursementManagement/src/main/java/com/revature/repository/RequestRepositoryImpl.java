@@ -14,6 +14,7 @@ import com.revature.model.User;
 import com.revature.util.HibernateSessionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.revature.util.FlowTrace;
 
 public class RequestRepositoryImpl implements RequestRepository {
 
@@ -25,6 +26,7 @@ public class RequestRepositoryImpl implements RequestRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(RequestRepositoryImpl.class, "findById: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			request = s.createQuery("FROM Request r WHERE r.requestId = :requestId", Request.class)
@@ -51,6 +53,7 @@ public class RequestRepositoryImpl implements RequestRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(RequestRepositoryImpl.class, "findByDateLocationRequester: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			request = s.createQuery("FROM Request r WHERE r.eventDate = :eventDate AND r.eventLocation = :eventLocation AND r.requester = :user", Request.class)
@@ -78,6 +81,7 @@ public class RequestRepositoryImpl implements RequestRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(RequestRepositoryImpl.class, "findAll: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			requests = s.createQuery("FROM Request", Request.class).getResultList();
@@ -101,6 +105,7 @@ public class RequestRepositoryImpl implements RequestRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(RequestRepositoryImpl.class, "findByRequester: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			requests = s.createQuery("FROM Request r WHERE r.requester = :user", Request.class)
@@ -126,6 +131,7 @@ public class RequestRepositoryImpl implements RequestRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(RequestRepositoryImpl.class, "findByRequesterAndPendingStatus: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			requests = s.createQuery("FROM Request r WHERE r.requester = :user AND r.requestStatus.statusId = 2", Request.class)
@@ -151,6 +157,7 @@ public class RequestRepositoryImpl implements RequestRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(RequestRepositoryImpl.class, "findByRequesterAndResolvedStatus: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			requests = s.createQuery("FROM Request r WHERE r.requester = :user AND r.requestStatus.statusId = 1", Request.class)
@@ -175,6 +182,7 @@ public class RequestRepositoryImpl implements RequestRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(RequestRepositoryImpl.class, "makeNewRequest: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			s.save(request);
@@ -196,6 +204,7 @@ public class RequestRepositoryImpl implements RequestRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(RequestRepositoryImpl.class, "updateRequest: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			s.merge(request);

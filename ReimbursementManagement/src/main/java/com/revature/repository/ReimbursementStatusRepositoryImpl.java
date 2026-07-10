@@ -8,6 +8,7 @@ import com.revature.model.ReimbursementStatus;
 import com.revature.util.HibernateSessionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.revature.util.FlowTrace;
 
 public class ReimbursementStatusRepositoryImpl implements ReimbursementStatusRepository {
 
@@ -19,6 +20,7 @@ public class ReimbursementStatusRepositoryImpl implements ReimbursementStatusRep
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(ReimbursementStatusRepositoryImpl.class, "findById: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			reimbursementStatus = s.createQuery("FROM ReimbursementStatus rs WHERE rs.statusId = :id", ReimbursementStatus.class)
@@ -44,6 +46,7 @@ public class ReimbursementStatusRepositoryImpl implements ReimbursementStatusRep
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(ReimbursementStatusRepositoryImpl.class, "findByStatus: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			reimbursementStatus = s.createQuery("FROM ReimbursementStatus rs WHERE rs.status = :status", ReimbursementStatus.class)

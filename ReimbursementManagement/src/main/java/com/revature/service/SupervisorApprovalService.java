@@ -25,6 +25,7 @@ import com.revature.repository.SupervisorApprovalStatusRepository;
 import com.revature.repository.SupervisorApprovalStatusRepositoryImpl;
 import com.revature.repository.UserRepository;
 import com.revature.repository.UserRepositoryImpl;
+import com.revature.util.FlowTrace;
 
 public class SupervisorApprovalService {
 
@@ -49,22 +50,27 @@ public class SupervisorApprovalService {
 	}
 	
 	public List<SupervisorApproval> findAll() {
+		FlowTrace.log(SupervisorApprovalService.class, "findAll: service operation begins");
 		return this.sar.findAll();
 	}
 	
 	public SupervisorApproval findById(int id) {
+		FlowTrace.log(SupervisorApprovalService.class, "findById: service operation begins");
 		return this.sar.findById(id);
 	}
 	
 	public List<SupervisorApproval> findByRequestAndRequester(Request request, User requester) {
+		FlowTrace.log(SupervisorApprovalService.class, "findByRequestAndRequester: service operation begins");
 		return this.sar.findByRequestAndRequester(request, requester);
 	}
 	
 	public SupervisorApproval findByRequestRequesterManager(Request request, User requester, User manager) {
+		FlowTrace.log(SupervisorApprovalService.class, "findByRequestRequesterManager: service operation begins");
 		return this.sar.findByRequestRequesterManager(request, requester, manager);
 	}
 	
 	public List<SupervisorApproval> findPendingRequestsForManager(User manager) {
+		FlowTrace.log(SupervisorApprovalService.class, "findPendingRequestsForManager: service operation begins");
 		List<SupervisorApproval> pendingApprovals = new ArrayList<>();
 		for(SupervisorApproval a : this.findAll()) {
 			if(a.getSupervisorApprovalStatus().getStatusId() == 2 && a.getHierarchy().getSupervisorUser().equals(manager)) {
@@ -75,6 +81,7 @@ public class SupervisorApprovalService {
 	}
 	
 	public List<SupervisorApproval> findWhoResolvedAllRequests() {
+		FlowTrace.log(SupervisorApprovalService.class, "findWhoResolvedAllRequests: service operation begins");
 		List<SupervisorApproval> approvals = new ArrayList<>();
 		for(SupervisorApproval a : this.findAll()) {
 			if(a.getSupervisorApprovalStatus().getStatusId() == 1) {
@@ -85,6 +92,7 @@ public class SupervisorApprovalService {
 	}
 	
 	public List<Request> findRequestsMadeByEmployee(User manager, User employee) {
+		FlowTrace.log(SupervisorApprovalService.class, "findRequestsMadeByEmployee: service operation begins");
 		List<Request> requests = new ArrayList<>();
 		for(SupervisorApproval a : this.findAll()) {
 			if(a.getHierarchy().getSupervisorUser().equals(manager) && a.getHierarchy().getEmployeeUser().equals(employee)) {
@@ -95,10 +103,12 @@ public class SupervisorApprovalService {
 	}
 	
 	public void addApproval(SupervisorApproval approval) {
+		FlowTrace.log(SupervisorApprovalService.class, "addApproval: service operation begins");
 		this.sar.addApproval(approval);
 	}
 	
 	public void updateApproval(SupervisorApproval approval) {
+		FlowTrace.log(SupervisorApprovalService.class, "updateApproval: service operation begins");
 		this.sar.updateApproval(approval);
 	}
 
@@ -113,6 +123,7 @@ public class SupervisorApprovalService {
 	 * managers are still pending, nothing is written at all.
 	 */
 	public ApprovalOutcome resolveApproval(int requestId, int managerId, boolean decision) {
+		FlowTrace.log(SupervisorApprovalService.class, "resolveApproval: service operation begins");
 		Request request = this.requestRepository.findById(requestId);
 		User manager = this.userRepository.findById(managerId);
 		SupervisorApproval approval = this.sar.findByRequestRequesterManager(request, request.getRequester(), manager);
@@ -157,6 +168,7 @@ public class SupervisorApprovalService {
 	}
 	
 	public void deleteApproval(SupervisorApproval approval) {
+		FlowTrace.log(SupervisorApprovalService.class, "deleteApproval: service operation begins");
 		
 	}
 

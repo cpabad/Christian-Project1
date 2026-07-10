@@ -8,6 +8,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.revature.util.FlowTrace;
 
 /**
  * A model representing a user. Any user is an employee for the company that uses this system. 
@@ -157,6 +158,7 @@ public class User {
 	public User(int userId, String username, String password, String firstName, String lastName, String email,
 			Role role) {
 		super();
+		FlowTrace.log(User.class, "constructor (userId, username, password, firstName, lastName, email, role) fired for username=" + username);
 		this.userId = userId;
 		this.username = username;
 		this.password = password;
@@ -167,6 +169,7 @@ public class User {
 	}
 	public User() {
 		super();
+		FlowTrace.log(User.class, "no-arg constructor fired (Hibernate hydration builds entities this way)");
 	}
 	
 	

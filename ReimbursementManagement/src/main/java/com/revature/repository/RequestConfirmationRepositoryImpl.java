@@ -11,6 +11,7 @@ import com.revature.model.RequestConfirmation;
 import com.revature.util.HibernateSessionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.revature.util.FlowTrace;
 
 public class RequestConfirmationRepositoryImpl implements RequestConfirmationRepository {
 
@@ -22,6 +23,7 @@ public class RequestConfirmationRepositoryImpl implements RequestConfirmationRep
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(RequestConfirmationRepositoryImpl.class, "findById: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			confirmation = s.createQuery("FROM RequestConfirmation rc WHERE rc.confirmationId = :id", RequestConfirmation.class)
@@ -48,6 +50,7 @@ public class RequestConfirmationRepositoryImpl implements RequestConfirmationRep
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(RequestConfirmationRepositoryImpl.class, "findByDateAndRequest: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			confirmation = s.createQuery("FROM RequestConfirmation rc WHERE rc.confirmationDate = :date AND rc.request = :request", RequestConfirmation.class)

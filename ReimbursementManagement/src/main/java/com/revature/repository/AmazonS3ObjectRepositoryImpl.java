@@ -12,6 +12,7 @@ import com.revature.model.Request;
 import com.revature.util.HibernateSessionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.revature.util.FlowTrace;
 
 public class AmazonS3ObjectRepositoryImpl implements AmazonS3ObjectRepository{
 
@@ -23,6 +24,7 @@ public class AmazonS3ObjectRepositoryImpl implements AmazonS3ObjectRepository{
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(AmazonS3ObjectRepositoryImpl.class, "findById: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			object = s.createQuery("FROM AmazonS3Object s WHERE s.imageId = :id", AmazonS3Object.class)
@@ -48,6 +50,7 @@ public class AmazonS3ObjectRepositoryImpl implements AmazonS3ObjectRepository{
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(AmazonS3ObjectRepositoryImpl.class, "findByURL: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			object = s.createQuery("FROM AmazonS3Object s WHERE s.url = :url", AmazonS3Object.class)
@@ -73,6 +76,7 @@ public class AmazonS3ObjectRepositoryImpl implements AmazonS3ObjectRepository{
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(AmazonS3ObjectRepositoryImpl.class, "findByRequest: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			objects = s.createQuery("FROM AmazonS3Object s WHERE s.request = :request", AmazonS3Object.class)
@@ -97,6 +101,7 @@ public class AmazonS3ObjectRepositoryImpl implements AmazonS3ObjectRepository{
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(AmazonS3ObjectRepositoryImpl.class, "addObject: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			s.save(object);

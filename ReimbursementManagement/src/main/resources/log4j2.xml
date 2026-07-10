@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Converted 1:1 from the original log4j2.properties (Log4j2 prefers .properties over .xml
+     in its discovery order, so the properties file is gone - two configs would silently fight).
+     The STDOUT/MyFile appenders and the root logger are byte-for-byte the same behavior as
+     before; the only addition is the FLOW logger + its console-only appender. -->
+<Configuration status="error" dest="err" name="XmlConfig">
+
+	<Properties>
+		<Property name="filename">logs/ExpenseReimbursementEventTrialLog.txt</Property>
+	</Properties>
+
+	<ThresholdFilter level="debug"/>
+
+	<Appenders>
+		<Console name="STDOUT" target="SYSTEM_OUT">
+			<PatternLayout pattern="%m%n"/>
+			<ThresholdFilter level="info"/>
+		</Console>
+		<File name="MyFile" fileName="${filename}">
+			<PatternLayout pattern="%d{dd MMM yyyy HH:mm:ss}{GMT-6} %C{1} [%p] %m%n"/>
+		</File>
+		<!-- FLOW is console-only BY DESIGN: the trace is a live learning aid, not a record.
+		     No file appender here - do not add one. -->
+		<Console name="FlowConsole" target="SYSTEM_OUT">
+			<PatternLayout pattern="FLOW %m%n"/>
+		</Console>
+	</Appenders>
+
+	<Loggers>
+		<!-- The request-path narration (see com.revature.util.FlowTrace).
+		     TOGGLE: level="debug" = on, level="off" = silent. additivity=false keeps FLOW
+		     lines out of the root logger's file appender. -->
+		<Logger name="FLOW" level="debug" additivity="false">
+			<AppenderRef ref="FlowConsole"/>
+		</Logger>
+		<Root level="debug">
+			<AppenderRef ref="STDOUT"/>
+			<AppenderRef ref="MyFile"/>
+		</Root>
+	</Loggers>
+
+</Configuration>

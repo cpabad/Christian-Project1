@@ -4,6 +4,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import com.revature.util.FlowTrace;
 
 /**
  * A model representing a user's role. Only two roles exist: Supervisor and Employee.
@@ -69,11 +70,13 @@ public class Role {
 	}
 	public Role(int roleId, String role) {
 		super();
+		FlowTrace.log(Role.class, "constructor (roleId, role) fired");
 		this.roleId = roleId;
 		this.role = role;
 	}
 	public Role() {
 		super();
+		FlowTrace.log(Role.class, "no-arg constructor fired (Hibernate hydration builds entities this way)");
 	}
 	
 	

@@ -6,6 +6,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import com.revature.util.FlowTrace;
 
 /**
  * A model that representing the relationship between a supervisor and an employee.
@@ -91,12 +92,14 @@ public class Hierarchy {
 	}
 	public Hierarchy(int hierarchyId, User supervisorUser, User employeeUser) {
 		super();
+		FlowTrace.log(Hierarchy.class, "constructor (hierarchyId, supervisorUser, employeeUser) fired");
 		this.hierarchyId = hierarchyId;
 		this.supervisorUser = supervisorUser;
 		this.employeeUser = employeeUser;
 	}
 	public Hierarchy() {
 		super();
+		FlowTrace.log(Hierarchy.class, "no-arg constructor fired (Hibernate hydration builds entities this way)");
 	}
 	
 	

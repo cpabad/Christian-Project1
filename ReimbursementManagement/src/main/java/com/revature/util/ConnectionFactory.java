@@ -14,6 +14,7 @@ public class ConnectionFactory {
 	
 	public static Connection getConnection() throws SQLException {
 		try {
+			FlowTrace.log(ConnectionFactory.class, "opening a raw JDBC connection via DriverManager (the non-Hibernate path)");
 			Class.forName("org.postgresql.Driver");
 			conn = DriverManager.getConnection(
 					System.getenv("dburl"), 

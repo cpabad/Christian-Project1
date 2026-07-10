@@ -8,6 +8,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import com.revature.util.FlowTrace;
 
 /**
  * This is a model of confirmation of a supervisor's approval
@@ -92,12 +93,14 @@ public class SupervisorApprovalConfirmation {
 	}
 	public SupervisorApprovalConfirmation(int confirmationId, Date confirmationDate, SupervisorApproval approval) {
 		super();
+		FlowTrace.log(SupervisorApprovalConfirmation.class, "constructor (confirmationId, confirmationDate, approval) fired");
 		this.confirmationId = confirmationId;
 		this.confirmationDate = confirmationDate;
 		this.approval = approval;
 	}
 	public SupervisorApprovalConfirmation() {
 		super();
+		FlowTrace.log(SupervisorApprovalConfirmation.class, "no-arg constructor fired (Hibernate hydration builds entities this way)");
 	}
 
 }

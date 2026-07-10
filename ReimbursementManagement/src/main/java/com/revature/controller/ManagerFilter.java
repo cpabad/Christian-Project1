@@ -12,6 +12,8 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.revature.util.FlowTrace;
+
 /**
  * Servlet Filter implementation class ManagerFilter
  */
@@ -38,10 +40,13 @@ public class ManagerFilter implements Filter {
 		HttpServletRequest httpRequest = (HttpServletRequest) request;
 		HttpSession session = httpRequest.getSession(false);
 		if(session != null &&  "Supervisor".equals((String) session.getAttribute("role"))) {
-			chain.doFilter(request, response);	
+			FlowTrace.log(ManagerFilter.class, "role check: PASS (session role is Supervisor) - continuing down the filter chain");
+			chain.doFilter(request, response);
 		} else if(httpRequest.getRequestURI().contains("login")) {
+			FlowTrace.log(ManagerFilter.class, "role check: EXEMPT (login URL, no session required yet) - continuing down the filter chain");
 			chain.doFilter(request, response);
 		} else {
+			FlowTrace.log(ManagerFilter.class, "role check: FAIL (no session or wrong role) - forwarding to app/deny");
 			RequestDispatcher dispatcher = request.getRequestDispatcher("app/deny");
 			dispatcher.forward(httpRequest, response);
 		}

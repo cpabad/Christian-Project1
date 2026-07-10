@@ -8,6 +8,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import com.revature.util.FlowTrace;
 
 /**
  * This is a model for confirmation that a request was created.
@@ -92,12 +93,14 @@ public class RequestConfirmation {
 	}
 	public RequestConfirmation(int confirmationId, Date confirmationDate, Request request) {
 		super();
+		FlowTrace.log(RequestConfirmation.class, "constructor (confirmationId, confirmationDate, request) fired");
 		this.confirmationId = confirmationId;
 		this.confirmationDate = confirmationDate;
 		this.request = request;
 	}
 	public RequestConfirmation() {
 		super();
+		FlowTrace.log(RequestConfirmation.class, "no-arg constructor fired (Hibernate hydration builds entities this way)");
 	}
 	
 	

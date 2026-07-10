@@ -21,6 +21,7 @@ import com.revature.repository.SupervisorApprovalRepository;
 import com.revature.repository.SupervisorApprovalRepositoryImpl;
 import com.revature.repository.SupervisorApprovalStatusRepository;
 import com.revature.repository.SupervisorApprovalStatusRepositoryImpl;
+import com.revature.util.FlowTrace;
 
 public class RequestService {
 
@@ -41,30 +42,37 @@ public class RequestService {
 	}
 	
 	public Request findById(int id) {
+		FlowTrace.log(RequestService.class, "findById: service operation begins");
 		return this.requestRepository.findById(id);
 	}
 	
 	public Request findByDateLocationRequester(String date, EventLocation eventLocation, User requester) {
+		FlowTrace.log(RequestService.class, "findByDateLocationRequester: service operation begins");
 		return this.requestRepository.findByDateLocationRequester(date, eventLocation, requester);
 	}
 	
 	public List<Request> findAll() {
+		FlowTrace.log(RequestService.class, "findAll: service operation begins");
 		return this.requestRepository.findAll();
 	}
 	
 	public List<Request> findByRequester(User requester) {
+		FlowTrace.log(RequestService.class, "findByRequester: service operation begins");
 		return this.requestRepository.findByRequester(requester);
 	}
 	
 	public List<Request> findByRequesterAndPendingStatus(User requester) {
+		FlowTrace.log(RequestService.class, "findByRequesterAndPendingStatus: service operation begins");
 		return this.requestRepository.findByRequesterAndPendingStatus(requester);
 	}
 	
 	public List<Request> findByRequesterAndResolvedStatus(User requester) {
+		FlowTrace.log(RequestService.class, "findByRequesterAndResolvedStatus: service operation begins");
 		return this.requestRepository.findByRequesterAndResolvedStatus(requester);
 	}
 	
 	public void makeNewRequest(Request request) {
+		FlowTrace.log(RequestService.class, "makeNewRequest: service operation begins");
 		this.requestRepository.makeNewRequest(request);
 	}
 
@@ -76,6 +84,7 @@ public class RequestService {
 	 * request re-read from the database, so it carries its generated id.
 	 */
 	public Request submitRequest(Request newRequest) {
+		FlowTrace.log(RequestService.class, "submitRequest: service operation begins");
 		this.requestRepository.makeNewRequest(newRequest);
 		Request submittedRequest = this.requestRepository.findByDateLocationRequester(newRequest.getEventDate().toString(), newRequest.getEventLocation(), newRequest.getRequester());
 		for(Hierarchy h : this.hierarchyRepository.findByEmployee(newRequest.getRequester())) {
@@ -90,10 +99,12 @@ public class RequestService {
 	}
 	
 	public void updateRequest(Request request) {
+		FlowTrace.log(RequestService.class, "updateRequest: service operation begins");
 		this.requestRepository.updateRequest(request);
 	}
 	
 	public void deleteRequest(Request request) {
+		FlowTrace.log(RequestService.class, "deleteRequest: service operation begins");
 		
 	}
 

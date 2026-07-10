@@ -13,6 +13,7 @@ import com.revature.model.User;
 import com.revature.util.HibernateSessionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.revature.util.FlowTrace;
 
 public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepository {
 
@@ -24,6 +25,7 @@ public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepos
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(SupervisorApprovalRepositoryImpl.class, "findAll: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			approvals = s.createQuery("FROM SupervisorApproval", SupervisorApproval.class).getResultList();
@@ -47,6 +49,7 @@ public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepos
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(SupervisorApprovalRepositoryImpl.class, "findById: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			approval = s.createQuery("FROM SupervisorApproval sa WHERE sa.approvalId = :id", SupervisorApproval.class)
@@ -72,6 +75,7 @@ public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepos
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(SupervisorApprovalRepositoryImpl.class, "findByRequestAndRequester: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			approvals = s.createQuery("FROM SupervisorApproval sa WHERE sa.request = :request AND sa.request.requester = :user", SupervisorApproval.class)
@@ -98,6 +102,7 @@ public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepos
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(SupervisorApprovalRepositoryImpl.class, "findByRequestRequesterManager: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			approval = s.createQuery("FROM SupervisorApproval sa WHERE sa.request = :request AND sa.request.requester = :user1 AND sa.hierarchy.supervisorUser = :user2", SupervisorApproval.class)
@@ -124,6 +129,7 @@ public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepos
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(SupervisorApprovalRepositoryImpl.class, "addApproval: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			s.save(approval);
@@ -146,6 +152,7 @@ public class SupervisorApprovalRepositoryImpl implements SupervisorApprovalRepos
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(SupervisorApprovalRepositoryImpl.class, "updateApproval: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			s.merge(approval);

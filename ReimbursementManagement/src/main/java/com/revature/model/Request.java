@@ -10,6 +10,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import com.revature.util.FlowTrace;
 
 /**
  * A model representing an expense reimbursement request.
@@ -165,10 +166,12 @@ public class Request {
 	}
 	public Request() {
 		super();
+		FlowTrace.log(Request.class, "no-arg constructor fired (Hibernate hydration builds entities this way)");
 	}
 	public Request(int requestId, double amount, Date eventDate, EventLocation eventLocation, String requestedEvent,
 			User requester, RequestStatus requestStatus) {
 		super();
+		FlowTrace.log(Request.class, "constructor (requestId, amount, eventDate, eventLocation, requestedEvent, requester, requestStatus) fired");
 		this.requestId = requestId;
 		this.amount = amount;
 		this.eventDate = eventDate;

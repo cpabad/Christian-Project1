@@ -14,6 +14,7 @@ import com.revature.model.User;
 import com.revature.util.HibernateSessionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.revature.util.FlowTrace;
 
 public class ReimbursementRepositoryImpl implements ReimbursementRepository {
 
@@ -25,6 +26,7 @@ public class ReimbursementRepositoryImpl implements ReimbursementRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(ReimbursementRepositoryImpl.class, "findById: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			reimbursement = s.createQuery("FROM Reimbursement r WHERE r.reimbursementId = :id", Reimbursement.class)
@@ -49,6 +51,7 @@ public class ReimbursementRepositoryImpl implements ReimbursementRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(ReimbursementRepositoryImpl.class, "findByRequest: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			reimbursement = s.createQuery("FROM Reimbursement r WHERE r.finalApproval.request = :request", Reimbursement.class)
@@ -73,6 +76,7 @@ public class ReimbursementRepositoryImpl implements ReimbursementRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(ReimbursementRepositoryImpl.class, "findByEventDateAndRequester: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			reimbursement = s.createQuery("FROM Reimbursement r WHERE r.finalApproval.request.eventDate = :date AND r.finalApproval.request.requester = :user", Reimbursement.class)
@@ -100,6 +104,7 @@ public class ReimbursementRepositoryImpl implements ReimbursementRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(ReimbursementRepositoryImpl.class, "findAll: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			requests = s.createQuery("FROM Reimbursement", Reimbursement.class).getResultList();
@@ -122,6 +127,7 @@ public class ReimbursementRepositoryImpl implements ReimbursementRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(ReimbursementRepositoryImpl.class, "addReimbursement: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			s.save(reimbursement);
@@ -144,6 +150,7 @@ public class ReimbursementRepositoryImpl implements ReimbursementRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(ReimbursementRepositoryImpl.class, "updateReimbursement: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			s.merge(reimbursement);

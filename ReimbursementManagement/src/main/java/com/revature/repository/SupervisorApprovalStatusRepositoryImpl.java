@@ -8,6 +8,7 @@ import com.revature.model.SupervisorApprovalStatus;
 import com.revature.util.HibernateSessionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.revature.util.FlowTrace;
 
 public class SupervisorApprovalStatusRepositoryImpl implements SupervisorApprovalStatusRepository {
 
@@ -19,6 +20,7 @@ public class SupervisorApprovalStatusRepositoryImpl implements SupervisorApprova
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(SupervisorApprovalStatusRepositoryImpl.class, "findById: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			sas = s.createQuery("FROM SupervisorApprovalStatus sas WHERE sas.statusId = :id", SupervisorApprovalStatus.class)
@@ -44,6 +46,7 @@ public class SupervisorApprovalStatusRepositoryImpl implements SupervisorApprova
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(SupervisorApprovalStatusRepositoryImpl.class, "findByStatus: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			sas = s.createQuery("FROM SupervisorApprovalStatus sas WHERE sas.status = :status", SupervisorApprovalStatus.class)

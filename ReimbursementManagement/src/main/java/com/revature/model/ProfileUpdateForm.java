@@ -1,5 +1,7 @@
 package com.revature.model;
 
+import com.revature.util.FlowTrace;
+
 /**
  * The profile-update form as submitted: three optional sections (username,
  * password, email), each activated by its non-blank confirm field.
@@ -19,6 +21,7 @@ public class ProfileUpdateForm {
 	public ProfileUpdateForm(String oldUsername, String newUsername, String confirmUsername,
 			String oldPassword, String newPassword, String confirmPassword,
 			String oldEmail, String newEmail, String confirmEmail) {
+		FlowTrace.log(ProfileUpdateForm.class, "constructor (oldUsername, newUsername, confirmUsername, oldPassword, newPassword, confirmPassword, oldEmail, newEmail, confirmEmail) fired");
 		this.oldUsername = oldUsername;
 		this.newUsername = newUsername;
 		this.confirmUsername = confirmUsername;

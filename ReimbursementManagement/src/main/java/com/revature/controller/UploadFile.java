@@ -21,6 +21,7 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.revature.util.FlowTrace;
 
 /**
  * Receives a receipt image (multipart/form-data) and stores it in the S3 bucket.
@@ -41,6 +42,7 @@ public class UploadFile extends HttpServlet {
 	}
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		FlowTrace.log(UploadFile.class, "doPost received multipart POST " + request.getRequestURI() + " - buffering the file part, then S3 upload");
 		Part filePart = request.getPart("myFile");
 		// @MultipartConfig has no location, so relative writes land in the container's temp directory
 		filePart.write("request_part");
@@ -55,11 +57,13 @@ public class UploadFile extends HttpServlet {
 		try {
 			s3.putObject(BUCKET_NAME, fileName, file);
 		} catch (AmazonServiceException e) {
+			FlowTrace.log(UploadFile.class, "S3 putObject FAILED - answering 500 without forwarding");
 			LOG.error("S3 upload failed", e);
 			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "The file upload failed. Please try again later.");
 			return;
 		}
 		LOG.debug("Upload of " + fileName + " complete");
+		FlowTrace.log(UploadFile.class, "S3 upload complete - forwarding to app/upload-file so RequestHelper links the file to its request");
 		request.setAttribute("fileName", fileName);
 		RequestDispatcher dispatcher = request.getRequestDispatcher("app/upload-file");
 		dispatcher.forward(request, response);

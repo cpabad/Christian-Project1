@@ -10,6 +10,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import com.revature.util.FlowTrace;
 
 /**
  * This model represents the approval made to a request.
@@ -147,6 +148,7 @@ public class SupervisorApproval {
 	public SupervisorApproval(int approvalId, Date datePreviouslyUpdated, Request request, Hierarchy hierarchy,
 			SupervisorApprovalStatus supervisorApprovalStatus, boolean approval) {
 		super();
+		FlowTrace.log(SupervisorApproval.class, "constructor (approvalId, datePreviouslyUpdated, request, hierarchy, supervisorApprovalStatus, approval) fired");
 		this.approvalId = approvalId;
 		this.datePreviouslyUpdated = datePreviouslyUpdated;
 		this.request = request;
@@ -156,6 +158,7 @@ public class SupervisorApproval {
 	}
 	public SupervisorApproval() {
 		super();
+		FlowTrace.log(SupervisorApproval.class, "no-arg constructor fired (Hibernate hydration builds entities this way)");
 	}
 
 }

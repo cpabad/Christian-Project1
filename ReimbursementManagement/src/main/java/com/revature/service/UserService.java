@@ -11,6 +11,7 @@ import com.revature.model.ProfileUpdateOutcome;
 import com.revature.model.User;
 import com.revature.repository.UserRepository;
 import com.revature.repository.UserRepositoryImpl;
+import com.revature.util.FlowTrace;
 
 public class UserService {
 	
@@ -21,18 +22,22 @@ public class UserService {
 	}
 	
 	public User findById(int id) {
+		FlowTrace.log(UserService.class, "findById: service operation begins");
 		return this.userRepository.findById(id);
 	}
 	
 	public User findByUsername(String username) {
+		FlowTrace.log(UserService.class, "findByUsername: service operation begins");
 		return this.userRepository.findByUsername(username);
 	}
 	
 	public User findByEmail(String email) {
+		FlowTrace.log(UserService.class, "findByEmail: service operation begins");
 		return this.userRepository.findByEmail(email);
 	}
 	
 	public void update(User user) {
+		FlowTrace.log(UserService.class, "update: service operation begins");
 		this.userRepository.updateEmployee(user);
 	}
 
@@ -44,6 +49,8 @@ public class UserService {
 	 * distinguish which check failed.
 	 */
 	public User authenticate(String usernameOrEmail, String rawPassword) {
+		FlowTrace.log(UserService.class, "authenticate: identifier '" + usernameOrEmail + "' "
+				+ (usernameOrEmail.contains("@") ? "contains '@' - treating it as an email" : "has no '@' - treating it as a username"));
 		User user;
 		try {
 			if(usernameOrEmail.contains("@")) {
@@ -52,14 +59,18 @@ public class UserService {
 				user = this.userRepository.findByUsername(usernameOrEmail);
 			}
 		} catch (NoResultException e) {
+			FlowTrace.log(UserService.class, "authenticate outcome: no user row for that identifier (NoResultException) - returning null");
 			return null;
 		}
 		if(user == null || rawPassword.trim().isEmpty()) {
+			FlowTrace.log(UserService.class, "authenticate outcome: " + (user == null ? "repository returned null" : "blank password submitted") + " - returning null");
 			return null;
 		}
 		if(new BCryptPasswordEncoder().matches(rawPassword, user.getPassword())) {
+			FlowTrace.log(UserService.class, "authenticate outcome: BCrypt verified the password for '" + user.getUsername() + "' - returning the user");
 			return user;
 		}
+		FlowTrace.log(UserService.class, "authenticate outcome: BCrypt password mismatch for '" + user.getUsername() + "' - returning null");
 		return null;
 	}
 
@@ -72,6 +83,7 @@ public class UserService {
 	 * without persisting anything.
 	 */
 	public ProfileUpdateOutcome updateProfile(int userId, ProfileUpdateForm form) {
+		FlowTrace.log(UserService.class, "updateProfile: service operation begins");
 		User user = this.userRepository.findById(userId);
 		if(form.getConfirmUsername().trim().isEmpty() == false) {
 			if(form.getOldUsername().trim().isEmpty() == false && user.getUsername().equals(form.getOldUsername())) {

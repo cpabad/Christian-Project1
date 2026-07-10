@@ -4,6 +4,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import com.revature.util.FlowTrace;
 
 /**
  * A model representing the status of a reimbursement request.
@@ -69,11 +70,13 @@ public class RequestStatus {
 	}
 	public RequestStatus(int statusId, String status) {
 		super();
+		FlowTrace.log(RequestStatus.class, "constructor (statusId, status) fired");
 		this.statusId = statusId;
 		this.status = status;
 	}
 	public RequestStatus() {
 		super();
+		FlowTrace.log(RequestStatus.class, "no-arg constructor fired (Hibernate hydration builds entities this way)");
 	}
 	
 

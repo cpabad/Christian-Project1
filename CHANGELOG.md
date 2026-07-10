@@ -181,6 +181,29 @@ error-path bug across the repository layer, and remove a committed credential.
 ### Style - Pico.css facelift merged
 The four `christian/frontend-facelift` commits (login, employee, supervisor pages, image-upload off-ramp; HTML-only) merged to main, so the XSS sweep above applies once to the final markup rather than per-branch.
 
+### Learning aid - FLOW request-path narration
+- **What.** A dedicated `FLOW` Log4j2 logger narrates every layer a request touches, in order:
+  `FLOW [<reqId>|<hop>] <Class> → <event>`. The first filter (`SessionFilter`, mapped to `/*`)
+  opens a per-request frame (4-hex correlation id via `ThreadContext`, cleared in a `finally`
+  so pooled threads never leak a stale id); a per-request hop counter keeps the narrative
+  ordered even when concurrent requests interleave. Instrumented at boundaries and decision
+  points: filters (auth/role outcomes), FrontController (write-auth check, response status),
+  RequestHelper (which route matched, which service is called, login/approval/profile
+  decisions), all services (operation entry; `authenticate` narrates its outcome), all
+  repository Impls (session + transaction open), both factories, and every model constructor
+  (which signature fired - Hibernate hydration becomes visible). Empty CRUD-placeholder stubs
+  are deliberately NOT traced: they are on no request path.
+- **Console-only, toggleable.** `FlowTrace` writes through its own ConsoleAppender - no file;
+  the trace lives in the terminal and dies with the process. Toggle = the FLOW logger's level
+  in `log4j2.xml` (`debug` on / `off` silent); `log4j2-test.xml` ships with `off` so tests
+  stay clean. The old `log4j2.properties` was converted 1:1 to `log4j2.xml` (Log4j2's
+  discovery order prefers properties, so keeping both would silently ignore the xml).
+- **Redaction.** No passwords, hashes, or session tokens in any FLOW line; usernames only.
+- **Coverage side-effect.** The entry lines added instructions inside the few never-tested
+  service methods, dropping the enforced service coverage gate to 97%. Fixed the honest way:
+  a real `HierarchyService.findAll` delegation test (it is request-reachable) and no FLOW
+  lines in the unreachable stubs. Suite 124 -> 125 green; service instructions 99.46%.
+
 ## Planned / not yet done
 - **Optional: git history scrub.** The exposed AWS key pair was revoked and all EC2 instances terminated (2026-07-06), so the credential is dead; scrubbing `s3.properties` from git history with `git-filter-repo` (as was done for P3) remains available as pure tidiness.
 - **Microservice refactor (Phase 4) — extracted to its own repo.** The capstone began here in the `ers-service/` module (Spring Boot 3 scaffold → a Role tracer → the Request slice; the branch `christian/microservice` is frozen at that point) and then **moved to a dedicated repository**: [cpabad/Revature931-Project1-Microservice](https://github.com/cpabad/Revature931-Project1-Microservice), where the self-issued-JWT auth slice and the approval-chain slice are done. This repo stays the home of the monolith and the record of its Java 8 refresh; the 2026-07 service extractions make the remaining decomposition mostly mechanical, since the cascades now live in services that port to Spring beans directly.

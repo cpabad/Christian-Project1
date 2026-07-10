@@ -11,6 +11,7 @@ import com.revature.model.SupervisorApprovalConfirmation;
 import com.revature.util.HibernateSessionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.revature.util.FlowTrace;
 
 public class SupervisorApprovalConfirmationRepositoryImpl implements SupervisorApprovalConfirmationRepository {
 
@@ -22,6 +23,7 @@ public class SupervisorApprovalConfirmationRepositoryImpl implements SupervisorA
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(SupervisorApprovalConfirmationRepositoryImpl.class, "findById: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			confirmation = s.createQuery("FROM SupervisorApprovalConfirmation sac WHERE sac.confirmationId = :id", SupervisorApprovalConfirmation.class)
@@ -47,6 +49,7 @@ public class SupervisorApprovalConfirmationRepositoryImpl implements SupervisorA
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(SupervisorApprovalConfirmationRepositoryImpl.class, "findByDateAndApproval: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			confirmation = s.createQuery("FROM SupervisorApprovalConfirmation sac WHERE sac.confirmationDate = :date AND sac.approval = :approval", SupervisorApprovalConfirmation.class)

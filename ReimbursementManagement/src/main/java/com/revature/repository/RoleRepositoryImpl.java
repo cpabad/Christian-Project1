@@ -8,6 +8,7 @@ import com.revature.model.Role;
 import com.revature.util.HibernateSessionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.revature.util.FlowTrace;
 
 public class RoleRepositoryImpl implements RoleRepository {
 
@@ -19,6 +20,7 @@ public class RoleRepositoryImpl implements RoleRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(RoleRepositoryImpl.class, "findById: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			role = s.createQuery("FROM Role r WHERE r.roleId = :roleId", Role.class)
@@ -44,6 +46,7 @@ public class RoleRepositoryImpl implements RoleRepository {
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(RoleRepositoryImpl.class, "findByRole: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			retrievedRole = s.createQuery("FROM Role r WHERE r.role = :role", Role.class)

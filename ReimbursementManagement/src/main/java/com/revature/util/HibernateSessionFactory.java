@@ -11,6 +11,7 @@ public class HibernateSessionFactory {
 	
 	public static Session getSession() throws HibernateException {
 		if(sessionFactory == null) {
+			FlowTrace.log(HibernateSessionFactory.class, "first use - building the singleton SessionFactory from hibernate.cfg.xml + dburl/dbuser/dbpassword env vars (expensive, happens once)");
 			sessionFactory = new Configuration()
 					.configure()
 					.setProperty("hibernate.connection.url", System.getenv("dburl"))
@@ -18,6 +19,7 @@ public class HibernateSessionFactory {
 					.setProperty("hibernate.connection.password", System.getenv("dbpassword"))
 					.buildSessionFactory();
 		}
+		FlowTrace.log(HibernateSessionFactory.class, "handing the current thread-bound Hibernate Session to the caller");
 		return sessionFactory.getCurrentSession();
 	}
 

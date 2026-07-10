@@ -8,6 +8,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import com.revature.util.FlowTrace;
 
 @Entity
 @Table(name = "request_image", schema = "\"ExpenseReimbursementManagementSystem\"")
@@ -90,6 +91,7 @@ public class AmazonS3Object {
 
 	public AmazonS3Object(int imageId, String fileName, Request request) {
 		super();
+		FlowTrace.log(AmazonS3Object.class, "constructor (imageId, fileName, request) fired");
 		this.imageId = imageId;
 		this.fileName = fileName;
 		this.request = request;
@@ -97,6 +99,7 @@ public class AmazonS3Object {
 
 	public AmazonS3Object() {
 		super();
+		FlowTrace.log(AmazonS3Object.class, "no-arg constructor fired (Hibernate hydration builds entities this way)");
 	}
 
 	

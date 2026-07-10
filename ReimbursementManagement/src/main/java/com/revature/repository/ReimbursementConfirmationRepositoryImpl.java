@@ -12,6 +12,7 @@ import com.revature.model.User;
 import com.revature.util.HibernateSessionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.revature.util.FlowTrace;
 
 public class ReimbursementConfirmationRepositoryImpl implements ReimbursementConfirmationRepository {
 
@@ -23,6 +24,7 @@ public class ReimbursementConfirmationRepositoryImpl implements ReimbursementCon
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(ReimbursementConfirmationRepositoryImpl.class, "findById: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			rc = s.createQuery("FROM ReimbursementConfirmation rc WHERE rc.confirmationId = :id", ReimbursementConfirmation.class)
@@ -48,6 +50,7 @@ public class ReimbursementConfirmationRepositoryImpl implements ReimbursementCon
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(ReimbursementConfirmationRepositoryImpl.class, "findByEventDateAndRequester: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			rc = s.createQuery("FROM ReimbursementConfirmation rc WHERE rc.reimbursementAwarded.finalApproval.request.eventDate = :date AND rc.reimbursementAwarded.finalApproval.request.requester = :user", ReimbursementConfirmation.class)
@@ -74,6 +77,7 @@ public class ReimbursementConfirmationRepositoryImpl implements ReimbursementCon
 		Session s = null;
 		Transaction tx = null;
 		try {
+			FlowTrace.log(ReimbursementConfirmationRepositoryImpl.class, "findByConfirmationDateAndReimbursement: opening a Hibernate session + transaction");
 			s = HibernateSessionFactory.getSession();
 			tx = s.beginTransaction();
 			rc = s.createQuery("FROM ReimbursementConfirmation rc WHERE rc.confirmationDate = :date AND rc.reimbursementAwarded = :reimbursement", ReimbursementConfirmation.class)

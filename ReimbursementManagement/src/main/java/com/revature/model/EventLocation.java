@@ -6,6 +6,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import com.revature.util.FlowTrace;
 
 /**
  * A model of an event's location.
@@ -104,6 +105,7 @@ public class EventLocation {
 	}
 	public EventLocation(int locationId, int street_number, String street_name, CityStatePostal cityStatePostal) {
 		super();
+		FlowTrace.log(EventLocation.class, "constructor (locationId, street_number, street_name, cityStatePostal) fired");
 		this.locationId = locationId;
 		this.street_number = street_number;
 		this.street_name = street_name;
@@ -111,6 +113,7 @@ public class EventLocation {
 	}
 	public EventLocation() {
 		super();
+		FlowTrace.log(EventLocation.class, "no-arg constructor fired (Hibernate hydration builds entities this way)");
 	}
 	
 	
