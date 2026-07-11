@@ -45,6 +45,23 @@ employees who report to them.
 > IMPORTANT: use **Tomcat 9 or 8.5 - never Tomcat 10 or newer.** This app uses the older
 > `javax.servlet` API. Tomcat 10+ switched to `jakarta.servlet` and will refuse to run it.
 
+### Verify your toolchain
+
+Confirm each tool is present and at the right version before you start. If Tomcat is missing,
+see the [Tomcat 9 install appendix](#appendix--installing-tomcat-9) at the end.
+
+```
+java -version                              # need a JDK 8 for the build (see note below)
+mvn -version                               # any recent Maven 3.x
+psql --version                             # PostgreSQL 12+ is fine
+~/tomcat9/bin/version.sh                    # prints "Server version: Apache Tomcat/9.0.x"
+```
+
+> Note on the JDK: `java -version` may report a newer JDK (e.g. 21) that you use for other
+> projects - that is fine as your default. The monolith BUILD (Step 2) specifically needs a
+> **JDK 8**, which is why Step 2 sets `JAVA_HOME` to it explicitly rather than relying on the
+> default. Confirm you have one: `ls /usr/lib/jvm | grep -i 8` (Debian/Ubuntu/Mint layout).
+
 ---
 
 ## How to run it - step by step
@@ -98,6 +115,11 @@ the Java version.)
 
 ### Step 3 - Give Tomcat the database settings
 
+> **`<tomcat>` is a placeholder for your Tomcat install directory** - substitute your real path
+> everywhere it appears below. On this dev box that is `~/tomcat9`, so `<tomcat>/bin/setenv.sh`
+> means `~/tomcat9/bin/setenv.sh`. (Do not type the angle brackets.) If `~/tomcat9/bin/setenv.sh`
+> already exists and is executable, this step is already done - skip to Step 4.
+
 The app reads three environment variables at runtime: `dburl`, `dbuser`, `dbpassword`.
 Tomcat's JVM must have them. The simplest way is a `setenv.sh` in Tomcat's `bin/` folder:
 
@@ -108,7 +130,8 @@ export dbuser="ers"
 export dbpassword="ers"
 ```
 
-Then make it executable: `chmod +x <tomcat>/bin/setenv.sh`
+Then make it executable: `chmod +x <tomcat>/bin/setenv.sh` (e.g. `chmod +x ~/tomcat9/bin/setenv.sh`).
+If the file is already there with an `x` bit (check with `ls -l ~/tomcat9/bin/setenv.sh`), you are done.
 
 ### Step 4 - Deploy and start
 
@@ -131,11 +154,15 @@ http://localhost:8080/ReimbursementManagement/
 On the landing page, type the username and password, then click **Employee Login**.
 
 - Employee account: **`employee2`** / **`employeePassword`**
-- Supervisor accounts (use the **Manager Login** button): `employee1` or `admin`, same password.
+- Supervisor account (use the **Manager Login** button): **`employee1`** / **`employeePassword`**.
 
 Why `employee2`? The seed defines two roles - Supervisor (role 1) and Employee (role 2).
 `admin` and `employee1` are Supervisors; `employee2`, `employee3`, and `employee4` are
 Employees. The employee screens only work for an account whose role is Employee.
+
+> Verified 2026-07-11: `employee1` / `employeePassword` logs in as a Supervisor. `admin` is also
+> a Supervisor in the seed, but its stored bcrypt hash is **not** `employeePassword` (login
+> returns 400/401) - use `employee1` for the supervisor flow.
 
 ---
 
@@ -321,3 +348,48 @@ None of these crash the server anymore - all are harmless and recoverable.
 | Upload returns 500 | S3 is not configured locally (keys revoked) | Expected; navigate back - the server keeps running |
 | `mvn` shows 36 errors `Session.close() ... "s" is null` | Tests cannot reach the DB (env vars not exported) | `export dburl/dbuser/dbpassword` before `mvn`, or add `-DskipTests` |
 | `psql: role "<name>" does not exist` | Connected with no `-U`/`-d` (defaulted to your OS user) | `PGPASSWORD=ers psql -h localhost -U ers -d ers` |
+
+---
+
+## Appendix — installing Tomcat 9
+
+You only need this if `~/tomcat9/bin/version.sh` does not report `Apache Tomcat/9.0.x`. On this
+dev box Tomcat 9 is already installed at `~/tomcat9`.
+
+### Which distribution to download, and why
+
+From the Apache Tomcat 9 download page (<https://tomcat.apache.org/download-90.cgi>), under
+**Binary Distributions → Core**, take **`apache-tomcat-9.0.x.tar.gz`**. Reasoning:
+
+- **Tomcat 9, not 10+** — 9 runs the `javax.servlet` API this app targets; Tomcat 10 switched to
+  `jakarta.servlet` and will refuse the WAR (same rule as the top-of-file warning).
+- **"Core", not "Full documentation", "Deployer", or the source `.tar.gz`** — Core is the runnable
+  server. The Deployer is a CI/CD helper, not a server; the source needs compiling.
+- **`.tar.gz`, not `.zip`** — on Linux the tarball preserves the executable bit on the `bin/*.sh`
+  scripts; the `.zip` is the Windows-oriented package and strips it (you'd have to `chmod` them).
+- **Not `apt install tomcat9`** — Linux Mint's Ubuntu base (24.04) **dropped the `tomcat9`
+  package**, and the apt layout (`/etc/tomcat9`, `/var/lib/tomcat9`, systemd) also splits the
+  install across the filesystem, which does not match this guide's single-directory `<tomcat>`
+  model. The Core tarball is self-contained, version-pinned, needs no root, and is exactly what
+  `~/tomcat9` already is.
+
+### Install steps (Linux Mint)
+
+```
+# 1. download the Core tarball (check the page for the current 9.0.x patch version)
+cd ~
+curl -LO https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.119/bin/apache-tomcat-9.0.119.tar.gz
+
+# 2. extract, and name the folder ~/tomcat9 to match this guide
+tar xzf apache-tomcat-9.0.119.tar.gz
+mv apache-tomcat-9.0.119 tomcat9
+
+# 3. the bin/*.sh scripts are already executable from the tarball; confirm the server runs
+~/tomcat9/bin/version.sh          # -> Server version: Apache Tomcat/9.0.119
+
+# 4. (optional) clean up the archive
+rm ~/apache-tomcat-9.0.119.tar.gz
+```
+
+Tomcat needs a JDK/JRE on `PATH` (you already have one). After this, return to **Step 3** —
+create `~/tomcat9/bin/setenv.sh` with the database variables, then deploy in Step 4.
