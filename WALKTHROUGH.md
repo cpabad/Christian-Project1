@@ -109,7 +109,10 @@ needs.
 
 Hops 15-16 are real hydration: the `users` row comes back, and Hibernate builds the object
 the reflective way - no-arg constructor first (`User`, then its `Role` from the join), then
-populate fields. This is why every Hibernate entity must keep a no-arg constructor.
+populate fields. This is why every Hibernate entity must keep a no-arg constructor. (How
+Hibernate knows which class maps to which table and column is the `@Entity`/`@Column`
+annotations on `User` - read at SessionFactory build, hop 9. [ANNOTATIONS.md](ANNOTATIONS.md)
+walks all of them, including what breaks when one is deleted.)
 
 ## Hop 17 - BCrypt
 
@@ -132,7 +135,8 @@ exist.
    request's filters read at *their* hop 1.
 
 `FrontController` (hop 19) serializes the return value to JSON with Jackson (the `User`'s
-password never leaves - `@JsonIgnore`) and answers 200. `SessionFilter`'s `finally` (hop 20)
+password never leaves - `@JsonIgnore`; [ANNOTATIONS.md](ANNOTATIONS.md) shows the live capture
+of the hash leaking when that one line is deleted) and answers 200. `SessionFilter`'s `finally` (hop 20)
 closes the frame and clears the ThreadContext: the pooled thread is clean for its next,
 unrelated request.
 

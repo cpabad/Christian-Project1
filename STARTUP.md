@@ -60,6 +60,11 @@ FIRST if any tool below is missing, then come back to Step 1.
   (namespaces for tables). This app's tables live in a schema called
   `ExpenseReimbursementManagementSystem`, *inside* a database called `ers` - which is why Step 1
   creates the schema explicitly and every query is schema-qualified.
+- **Annotations** (`@Entity`, `@Override`, `@Column`, ...) - the `@`-words all over the Java
+  source. They are inert metadata: each one only matters because something specific *reads* it
+  (the compiler, Hibernate, Tomcat, Jackson, or a test framework), and who reads it decides
+  when a mistake surfaces. [ANNOTATIONS.md](ANNOTATIONS.md) covers every one you'll meet here,
+  with live deletion experiments.
 
 </details>
 
