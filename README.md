@@ -66,6 +66,8 @@ Prerequisites: Java 8 (JDK 1.8), Maven, PostgreSQL, and a servlet container (Tom
 ## Documentation
 * `STARTUP.md` - the complete run-it-locally guide: DB seed, build, deploy, login, the FLOW
   request trace, pitfalls, and troubleshooting.
+* `WALKTHROUGH.md` - one request (the employee login) narrated end-to-end through every
+  class, keyed to a real captured FLOW trace.
 * `CHANGELOG.md` - the 2026 refresh (build fix, test coverage, security hardening) with the
   root cause and fix for each change.
 * `COVERAGE.md` - how the service-layer test coverage (99.46%, enforced at >= 98%) is

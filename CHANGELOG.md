@@ -204,6 +204,25 @@ The four `christian/frontend-facelift` commits (login, employee, supervisor page
   a real `HierarchyService.findAll` delegation test (it is request-reachable) and no FLOW
   lines in the unreachable stubs. Suite 124 -> 125 green; service instructions 99.46%.
 
+## 2026-07 - Docs & dead-code pass
+
+### Cleanup - the dead frontend login cluster
+- **Symptom.** Four unreferenced frontend artifacts contradicted the real auth flow when read
+  cold: `login.html` (the orphaned pre-facelift login page, pointing at a `JS/login.js` that
+  does not exist), `JS/index.js` (its `login()` posts to `/app/login` and targets button ids
+  that only existed on `login.html`; its `logout()` is duplicated by every live page's own),
+  `JS/login2.js` (a captured demo request with hard-coded credentials and a JSESSIONID pasted
+  into source), and `JS/logout.js` (an empty file).
+- **Root cause.** The login flow moved into an inline `<script>` in `index.html` during
+  original development, and again through the Pico.css facelift - each move stranded the
+  previous generation of files without deleting them.
+- **Resolution.** All four deleted. Verified each was unreferenced first (no `<script src>`,
+  no cross-JS reference), then verified live after rebuild + redeploy: suite 125/125, login ->
+  homepage -> logout all 200.
+- **Takeaway.** Dead code that *describes a plausible but wrong architecture* is worse than
+  ordinary dead code - a cold reader (or interviewer) reconstructs the wrong system from it.
+  The tell was archaeological: three generations of login code, only one reachable.
+
 ## Planned / not yet done
 - **Optional: git history scrub.** The exposed AWS key pair was revoked and all EC2 instances terminated (2026-07-06), so the credential is dead; scrubbing `s3.properties` from git history with `git-filter-repo` (as was done for P3) remains available as pure tidiness.
 - **Microservice refactor (Phase 4) — extracted to its own repo.** The capstone began here in the `ers-service/` module (Spring Boot 3 scaffold → a Role tracer → the Request slice; the branch `christian/microservice` is frozen at that point) and then **moved to a dedicated repository**: [cpabad/Revature931-Project1-Microservice](https://github.com/cpabad/Revature931-Project1-Microservice), where the self-issued-JWT auth slice and the approval-chain slice are done. This repo stays the home of the monolith and the record of its Java 8 refresh; the 2026-07 service extractions make the remaining decomposition mostly mechanical, since the cascades now live in services that port to Spring beans directly.

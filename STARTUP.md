@@ -221,11 +221,9 @@ hands it to **RequestHelper**, which routes by URL to a **service**, which calls
 **repository**, which uses **Hibernate** to talk to **PostgreSQL**; the JSON answer comes back
 to the page's request.
 
-> Reading the frontend code? Ignore `JS/login2.js` (a dead hard-coded demo) and the `login()`
-> function in `JS/index.js` (it posts to `/app/login` and targets a button id that no longer
-> exists). The REAL login lives in the inline `<script>` of `index.html`, posting to
-> `/app/employee/login` / `/app/manager/login` as mapped above. Cleanup is queued on the
-> ROADMAP.
+> The login lives in the inline `<script>` of `index.html`, posting to `/app/employee/login` /
+> `/app/manager/login` as mapped above. (The old dead login files - `login.html`, `JS/index.js`,
+> `JS/login2.js`, `JS/logout.js` - were deleted 2026-07-10; see CHANGELOG.)
 
 Tip - see both halves of a request at once: keep the FLOW trace (section above) in your
 terminal and the browser's **Network** tab (F12) open while you click. The Network tab shows
