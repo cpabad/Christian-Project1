@@ -20,7 +20,7 @@ Verified facts as of this refresh:
   against the live schema).
 - **No known vulnerabilities in this monolith** as of 2026-07-10: the 2026-06 hardening pass
   (Log4Shell, BCrypt, CORS, dead filters, dependency CVEs, write-path auth) plus the stored-XSS
-  closure of 2026-07-09 (`innerHTML` -> `textContent`, commit 4f3fa57). Two honest caveats:
+  closure of 2026-07-09 (`innerHTML` -> `textContent`, commit 1c7c199). Two honest caveats:
   a documented latent *reliability* bug (seed row 2 can 500 the approve path - see ROADMAP
   Notes; not a vulnerability), and the repository layer swallows Hibernate errors by design
   (era-authentic anti-pattern, documented). The microservice repo tracks its own open
