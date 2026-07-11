@@ -35,7 +35,40 @@ employees who report to them.
 
 ---
 
+## New here? Start with this
+
+**Time:** about 30 minutes on a fresh machine (most of it is installing tools and the first
+Maven build downloading dependencies). **The path:** install four tools → create + seed the
+database (Step 1) → build a WAR (Step 2) → hand Tomcat the DB settings (Step 3) → deploy and
+start (Step 4) → log in (Step 5). Do the [install appendix](#appendix--installing-the-toolchain)
+FIRST if any tool below is missing, then come back to Step 1.
+
+<details>
+<summary><b>Terms you'll meet in this guide</b> (click to expand)</summary>
+
+- **JDK vs JRE** - a **JDK** (Java Development Kit) can *compile* code (`javac`); a **JRE** only
+  *runs* it. Building this project needs a JDK; a JRE alone fails with "release version not
+  supported". This project needs specifically a **JDK 8**.
+- **Maven** - the build tool. `mvn package` compiles the code, runs the tests, and bundles the
+  result into a WAR. It reads `pom.xml`.
+- **WAR** (Web Application Archive) - a single `.war` file containing the whole web app
+  (compiled classes + the HTML/JS/CSS frontend). You "deploy" it by dropping it into Tomcat.
+- **Servlet container / Tomcat** - the server that runs a WAR. This app is a *servlet* app (the
+  pre-Spring-Boot Java web style), so it needs a servlet container; **Tomcat 9** is ours. (It is
+  NOT bundled in the WAR - you install and run it separately, unlike a Spring Boot app.)
+- **Schema vs database** - in PostgreSQL a **database** contains one or more **schemas**
+  (namespaces for tables). This app's tables live in a schema called
+  `ExpenseReimbursementManagementSystem`, *inside* a database called `ers` - which is why Step 1
+  creates the schema explicitly and every query is schema-qualified.
+
+</details>
+
+---
+
 ## What you need installed
+
+If any of these is missing, the [install appendix](#appendix--installing-the-toolchain) at the
+end has copy-paste steps for Linux (apt), macOS (Homebrew), and Windows.
 
 - **JDK 8** (the project targets Java 8)
 - **Maven**
@@ -47,8 +80,8 @@ employees who report to them.
 
 ### Verify your toolchain
 
-Confirm each tool is present and at the right version before you start. If Tomcat is missing,
-see the [Tomcat 9 install appendix](#appendix--installing-tomcat-9) at the end.
+Confirm each tool is present and at the right version before you start. If any is missing,
+see the [install appendix](#appendix--installing-the-toolchain) at the end.
 
 ```
 java -version                              # need a JDK 8 for the build (see note below)
@@ -88,6 +121,14 @@ If you are re-running and the schema already exists, drop it first, then repeat 
 PGPASSWORD=ers psql -h localhost -U ers -d ers -c 'DROP SCHEMA "ExpenseReimbursementManagementSystem" CASCADE;'
 ```
 
+> **✓ Success check.** The load prints a stream of `CREATE TABLE` / `INSERT 0 1` lines and no
+> `ERROR:`. Confirm the seed landed:
+> ```
+> PGPASSWORD=ers psql -h localhost -U ers -d ers -tAc 'SELECT count(*) FROM "ExpenseReimbursementManagementSystem".users;'
+> ```
+> Expect **`5`**. If you get `role "ers" does not exist` or `database "ers" does not exist`, the
+> first line (create role + database) did not run - re-run it with `sudo -u postgres`.
+
 ### Step 2 - Build the WAR
 
 Point Maven at a JDK 8, then build:
@@ -112,6 +153,15 @@ without running the tests, add `-DskipTests`.
 
 (Maven picks its JVM from `JAVA_HOME`; confirm with `mvn -version` if the build complains about
 the Java version.)
+
+> **✓ Success check.** The **first** build is slow - Maven downloads every dependency to `~/.m2`
+> (a minute or more; it is not hung). A successful build ends with `BUILD SUCCESS`, a
+> `Tests run: 125, Failures: 0, Errors: 0` line, and the WAR file existing:
+> ```
+> ls -lh ReimbursementManagement/target/ReimbursementManagement-0.0.1-SNAPSHOT.war
+> ```
+> `BUILD FAILURE` with `release version 8 not supported` means `JAVA_HOME` is not a JDK 8 (see
+> the troubleshooting table).
 
 ### Step 3 - Give Tomcat the database settings
 
@@ -149,6 +199,13 @@ Open in your browser:
 http://localhost:8080/ReimbursementManagement/
 ```
 
+> **✓ Success check.** In the terminal running Tomcat you should see a line like
+> `Server startup in [1234] milliseconds` and (because FLOW ships on) `FLOW [....|1] SessionFilter
+> -> GET ... received` when you load the page. The browser shows the login page. If the page is a
+> Tomcat 404, the WAR was not deployed under the name `ReimbursementManagement.war` - re-check the
+> `cp` target. If the terminal shows a stack trace mentioning `Session` or a JDBC URL, the DB
+> settings did not reach Tomcat (Step 3).
+
 ### Step 5 - Log in as an employee
 
 On the landing page, type the username and password, then click **Employee Login**.
@@ -163,6 +220,14 @@ Employees. The employee screens only work for an account whose role is Employee.
 > Verified 2026-07-11: `employee1` / `employeePassword` logs in as a Supervisor. `admin` is also
 > a Supervisor in the seed, but its stored bcrypt hash is **not** `employeePassword` (login
 > returns 400/401) - use `employee1` for the supervisor flow.
+
+> **✓ Success check.** A correct login lands you on the employee home page (or a "Welcome"
+> response), and the Tomcat FLOW trace shows `... login decision: SUCCESS ... creating the
+> session`. "Invalid Credentials" (400) means wrong username/password for the role - use exactly
+> `employee2` / `employeePassword`. "You already have a current session" means you are still
+> logged in from before - log out (or use a private window) and retry. **That's it - the app is
+> running.** From here, read [Watch the app think](#watch-the-app-think---the-flow-trace) to learn
+> how a request flows through the code.
 
 ---
 
@@ -339,8 +404,15 @@ None of these crash the server anymore - all are harmless and recoverable.
 
 ## Quick troubleshooting
 
+Install-level problems (before the app even runs) come first, then app-level ones.
+
 | Symptom | Likely cause | Fix |
 | --- | --- | --- |
+| `psql: could not connect ... server ... not running` / `Connection refused` | PostgreSQL service isn't started | Linux: `sudo systemctl start postgresql` (and `enable` it). macOS: `brew services start postgresql@16`. Windows: start the "postgresql" service. |
+| `sudo -u postgres psql` -> `sudo: a terminal is required` | Running it inside a non-interactive shell | Run it in a normal terminal window, or grant your user CREATEDB once and drop the `sudo -u postgres` prefix |
+| `mvn` / `java` build says `release version 8 not supported` | The `java` on `PATH` is a JRE or wrong-version JDK | Install a **JDK 8** (appendix) and `export JAVA_HOME=<jdk8 path>`; verify with `"$JAVA_HOME"/bin/javac -version` |
+| `java: command not found` or `mvn: command not found` | Tool not installed or not on `PATH` | Install it (appendix); reopen the terminal so `PATH` refreshes |
+| First `mvn` build seems to hang for a minute | It's downloading dependencies to `~/.m2` (one time) | Wait - it is not frozen; subsequent builds are fast |
 | `mvn` build fails on `isBlank`/Java version | Maven using the wrong JDK | `export JAVA_HOME=<your JDK 8>`, re-run |
 | App loads but every table is empty | DB env vars not seen by Tomcat | Put them in `<tomcat>/bin/setenv.sh` (Step 3) |
 | 404 on every page/button | WAR not deployed at `/ReimbursementManagement` | Deploy the WAR as `ReimbursementManagement.war` |
@@ -351,45 +423,92 @@ None of these crash the server anymore - all are harmless and recoverable.
 
 ---
 
-## Appendix — installing Tomcat 9
+## Appendix — installing the toolchain
 
-You only need this if `~/tomcat9/bin/version.sh` does not report `Apache Tomcat/9.0.x`. On this
-dev box Tomcat 9 is already installed at `~/tomcat9`.
+Install anything the [verify-toolchain](#verify-your-toolchain) check flagged as missing. Each
+tool below has steps for **Linux (Debian/Ubuntu/Mint, `apt`)**, **macOS (Homebrew)**, and
+**Windows**. On this dev box everything is already installed - this appendix is for a fresh
+machine. After installing, re-run the verify commands and return to Step 1.
 
-### Which distribution to download, and why
+> **The versions that matter:** a **JDK 8** for the build, and **Tomcat 9** (not 10+). Maven and
+> PostgreSQL are version-tolerant (any recent Maven 3.x, PostgreSQL 12+).
 
-From the Apache Tomcat 9 download page (<https://tomcat.apache.org/download-90.cgi>), under
-**Binary Distributions → Core**, take **`apache-tomcat-9.0.x.tar.gz`**. Reasoning:
+### Java (JDK 8)
 
-- **Tomcat 9, not 10+** — 9 runs the `javax.servlet` API this app targets; Tomcat 10 switched to
-  `jakarta.servlet` and will refuse the WAR (same rule as the top-of-file warning).
-- **"Core", not "Full documentation", "Deployer", or the source `.tar.gz`** — Core is the runnable
-  server. The Deployer is a CI/CD helper, not a server; the source needs compiling.
-- **`.tar.gz`, not `.zip`** — on Linux the tarball preserves the executable bit on the `bin/*.sh`
-  scripts; the `.zip` is the Windows-oriented package and strips it (you'd have to `chmod` them).
-- **Not `apt install tomcat9`** — Linux Mint's Ubuntu base (24.04) **dropped the `tomcat9`
-  package**, and the apt layout (`/etc/tomcat9`, `/var/lib/tomcat9`, systemd) also splits the
-  install across the filesystem, which does not match this guide's single-directory `<tomcat>`
-  model. The Core tarball is self-contained, version-pinned, needs no root, and is exactly what
-  `~/tomcat9` already is.
+The build needs a JDK **8** specifically (`javac`, not just a JRE). You can keep a newer JDK as
+your default - Step 2 points `JAVA_HOME` at the 8 explicitly.
 
-### Install steps (Linux Mint)
+- **Linux (apt):**
+  ```
+  sudo apt update && sudo apt install openjdk-8-jdk
+  # find the install path for JAVA_HOME (Step 2):
+  ls /usr/lib/jvm | grep -i 8        # e.g. java-8-openjdk-amd64
+  ```
+- **macOS (Homebrew):**
+  ```
+  brew install --cask temurin@8
+  /usr/libexec/java_home -v 1.8      # prints the JAVA_HOME path to use in Step 2
+  ```
+- **Windows:** download the **Eclipse Temurin JDK 8** `.msi` from <https://adoptium.net> and
+  install. `JAVA_HOME` is then e.g. `C:\Program Files\Eclipse Adoptium\jdk-8...`. (In WSL, use
+  the Linux apt steps instead - simpler for this servlet stack.)
+- **Verify:** `"$JAVA_HOME"/bin/javac -version` prints `javac 1.8.0_xxx`.
 
-```
-# 1. download the Core tarball (check the page for the current 9.0.x patch version)
-cd ~
-curl -LO https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.119/bin/apache-tomcat-9.0.119.tar.gz
+### Maven
 
-# 2. extract, and name the folder ~/tomcat9 to match this guide
-tar xzf apache-tomcat-9.0.119.tar.gz
-mv apache-tomcat-9.0.119 tomcat9
+- **Linux (apt):** `sudo apt install maven`
+- **macOS:** `brew install maven`
+- **Windows:** `winget install Apache.Maven` (or unzip the binary from
+  <https://maven.apache.org/download.cgi> and add its `bin` to `PATH`).
+- **Verify:** `mvn -version` (any Maven 3.x). It uses whatever `JAVA_HOME` you export in Step 2.
 
-# 3. the bin/*.sh scripts are already executable from the tarball; confirm the server runs
-~/tomcat9/bin/version.sh          # -> Server version: Apache Tomcat/9.0.119
+### PostgreSQL
 
-# 4. (optional) clean up the archive
-rm ~/apache-tomcat-9.0.119.tar.gz
-```
+- **Linux (apt):**
+  ```
+  sudo apt install postgresql
+  sudo systemctl enable --now postgresql     # start it and start on boot
+  ```
+- **macOS (Homebrew):**
+  ```
+  brew install postgresql@16
+  brew services start postgresql@16
+  ```
+- **Windows:** run the EnterpriseDB installer from
+  <https://www.postgresql.org/download/windows/>; it installs and starts the service and gives
+  you `psql` and pgAdmin.
+- **Verify:** `psql --version` (12+). The service must be *running* before Step 1 - see the first
+  troubleshooting row if a connection is refused. Step 1 creates the `ers` role and database.
 
-Tomcat needs a JDK/JRE on `PATH` (you already have one). After this, return to **Step 3** —
-create `~/tomcat9/bin/setenv.sh` with the database variables, then deploy in Step 4.
+### Apache Tomcat 9
+
+**Which distribution, and why.** From <https://tomcat.apache.org/download-90.cgi>, under
+**Binary Distributions → Core**, take **`apache-tomcat-9.0.x.tar.gz`** (Linux/macOS) or the
+**`.zip`** (Windows). Reasoning:
+
+- **Tomcat 9, not 10+** - 9 runs the `javax.servlet` API this app targets; Tomcat 10 switched to
+  `jakarta.servlet` and will refuse the WAR.
+- **"Core", not "Full documentation", "Deployer", or the source package** - Core is the runnable
+  server. The Deployer is a CI/CD helper; the source needs compiling.
+- **`.tar.gz` on Linux/macOS** preserves the executable bit on the `bin/*.sh` scripts; use the
+  **`.zip`** on Windows (which ships `bin/*.bat`).
+- **Not `apt install tomcat9`** - recent Ubuntu/Mint **dropped that package**, and its layout
+  (`/etc/tomcat9`, systemd) splits the install across the filesystem instead of the single
+  `<tomcat>` directory this guide assumes. The Core archive is self-contained, version-pinned,
+  and needs no root.
+
+- **Linux / macOS:**
+  ```
+  cd ~
+  curl -LO https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.119/bin/apache-tomcat-9.0.119.tar.gz
+  tar xzf apache-tomcat-9.0.119.tar.gz
+  mv apache-tomcat-9.0.119 tomcat9      # name it ~/tomcat9 to match this guide
+  ~/tomcat9/bin/version.sh              # -> Server version: Apache Tomcat/9.0.119
+  rm ~/apache-tomcat-9.0.119.tar.gz     # optional cleanup
+  ```
+- **Windows:** unzip `apache-tomcat-9.0.x.zip` to e.g. `C:\tomcat9`; start it with
+  `C:\tomcat9\bin\catalina.bat run`. Wherever `<tomcat>` appears in this guide, use `C:\tomcat9`,
+  and use `setenv.bat` (not `setenv.sh`) for the Step 3 environment variables.
+
+Tomcat needs a JDK/JRE on `PATH` (you installed one above). After this, return to **Step 3** -
+create `<tomcat>/bin/setenv.sh` with the database variables, then deploy in Step 4.
