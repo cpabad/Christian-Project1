@@ -167,3 +167,31 @@ is a *new* request, with a *new* FLOW id, whose SessionFilter line now reads
 | `UserRepositoryImpl` | repository | the actual query, session + transaction |
 | `HibernateSessionFactory` | util | singleton SessionFactory; thread-bound sessions |
 | `User`, `Role` | model | hydrated entities (no-arg ctor + populate) |
+
+## The same walkthrough, run by a robot — Build Now
+
+Everything above was one request, traced by hand. Jenkins runs the *whole* verification —
+fresh clone, containerized JDK-8 build, a throwaway seeded database, all 125 tests (this login
+path among them), plus three security scans — every time you push, and on demand when you
+press one button. Setup lives in [STARTUP.md](STARTUP.md) ("Jenkins — the teammate who never
+goes home") and in the microservice repo's `jenkins/README.md`; the pipeline itself is the
+commented `Jenkinsfile` at this repo's root.
+
+The ritual, once the job exists:
+
+1. Open http://localhost:8090 → the `ers-monolith` job.
+2. Press **Build Now**. The stage view lights up left to right: *Build → Tests →
+   SCA → SAST → Secrets*. Click the running build → **Console Output** to watch it narrate —
+   the CI cousin of the FLOW trace you just read.
+3. Come back to the job page and check the **weather icon**. Sunshine means the recent builds
+   all passed; clouds and storms mean the trend is rotting even if the latest run scraped by.
+
+That icon is the whole point. On the Revature team the ritual was pressing Build and watching
+for the sunshine-and-rainbows to appear — "keep me as happy as the sunshine in Jenkins" was a
+legitimate team standard, because it compresses *"does the app still build, pass every test,
+and scan clean, from scratch, on a machine that isn't mine?"* into one glance. Two honest
+footnotes on the habit: spam-clicking Build just queues identical builds (one click is one
+verdict — SCM polling already builds every push unasked), and **yellow** here is not
+rain-on-the-way, it's the warn-then-ratchet scan policy saying a security scan wants triage
+(see the Jenkinsfile header). Sunshine = ship-shape; yellow = read the scan log; red = the
+Discord ping already told you who to blame.

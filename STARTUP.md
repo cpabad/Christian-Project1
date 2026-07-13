@@ -18,6 +18,9 @@ Verified facts as of this refresh:
   a build-failing `check` rule at >= 98%. Methodology and denominator are in `COVERAGE.md`.
 - **Database design: 5NF / BCNF**, full analysis in `NORMALIZATION.md` (15 tables, verified
   against the live schema).
+- **CI: a full Jenkins pipeline** (`Jenkinsfile`, repo root) rebuilds, re-tests, and
+  security-scans every push in clean containers — see
+  [the Jenkins section](#jenkins--the-teammate-who-never-goes-home) for why and how.
 - **No known vulnerabilities in this monolith** as of 2026-07-10: the 2026-06 hardening pass
   (Log4Shell, BCrypt, CORS, dead filters, dependency CVEs, write-path auth) plus the stored-XSS
   closure of 2026-07-09 (`innerHTML` -> `textContent`, commit 1c7c199). Two honest caveats:
@@ -425,6 +428,90 @@ Install-level problems (before the app even runs) come first, then app-level one
 | Upload returns 500 | S3 is not configured locally (keys revoked) | Expected; navigate back - the server keeps running |
 | `mvn` shows 36 errors `Session.close() ... "s" is null` | Tests cannot reach the DB (env vars not exported) | `export dburl/dbuser/dbpassword` before `mvn`, or add `-DskipTests` |
 | `psql: role "<name>" does not exist` | Connected with no `-U`/`-d` (defaulted to your OS user) | `PGPASSWORD=ers psql -h localhost -U ers -d ers` |
+
+---
+
+## Jenkins — the teammate who never goes home
+
+Everything above this line is *you* running the app by hand. Jenkins is the piece that keeps
+verifying it when you're not looking. This section explains **why it exists here** and how to
+stand it up; the pipeline itself is the `Jenkinsfile` at the repo root (heavily commented —
+read it, it's the real documentation).
+
+### Why Jenkins, when `mvn test` already exists
+
+`mvn test` answers "does it work right now, on my machine, when I remember to run it?" Jenkins
+removes every clause of that sentence. Think of it as the team you don't have:
+
+- **It runs without being asked.** Every push gets built within ~2 minutes (SCM polling) —
+  including the Friday-evening "tiny doc fix" you'd never re-test by hand.
+- **It's a neutral witness.** Each build starts from a *fresh clone* in *clean containers*
+  with a *throwaway seeded database*. When Jenkins is green, the claim is "a stranger's
+  machine rebuilt and re-verified everything from scratch" — not "it worked in the tree I
+  happened to have". The classic "works on my machine" bug (an uncommitted file, a stale
+  `target/`, a locally-hacked DB row) cannot hide from it.
+- **It's the security team.** Three scans run on every build so you never again return to
+  this code wondering whether it rotted while you were away:
+  | Scan | Tool | Question it answers |
+  | --- | --- | --- |
+  | SCA | Trivy | "Did a CVE land on one of my dependencies while I wasn't looking?" |
+  | SAST | Semgrep | "Does my own source contain a known-dangerous pattern?" |
+  | Secrets | gitleaks | "Is a credential sitting in the working tree?" (hard **red**, no grace) |
+- **It shortens time-to-discovery.** A Discord ping fires the moment a build breaks — with
+  the commit author to "blame" — instead of the break surfacing weeks later when you next
+  run the suite. A bug caught 10 minutes after the push is a diff to read; the same bug
+  caught a month later is an archaeology dig.
+
+The working agreement that follows from this: **maintenance and patching decisions flow from
+Jenkins.** Once it shows green, stop worrying about the code — until a scan raises its hand.
+
+### Where it runs (and why not inside Tomcat)
+
+Historical note: in the Revature cohort this project's Jenkins ran as `jenkins.war` dropped
+into a Tomcat `webapps/` folder — on a shared server that no longer exists (this box's
+`~/tomcat9/webapps` holds only the app; it was checked). We don't recreate that: a
+Tomcat-hosted Jenkins shares a JVM, a port, and a lifecycle with whatever else Tomcat serves,
+and this Tomcat's job is serving the app under test. Today's setup is a **Docker container**,
+fully isolated from the app's Tomcat.
+
+The controller (one for both ERS repos) lives in the **microservice repo**:
+`~/Repo/Revature931-Project1-Microservice/jenkins/` — Dockerfile, compose file, and a
+step-by-step `README.md`. Short version:
+
+```bash
+cd ~/Repo/Revature931-Project1-Microservice/jenkins
+docker compose up -d --build          # UI at http://localhost:8090
+```
+
+then follow that README: unlock, suggested plugins + **Docker Pipeline**, add the two
+credentials (`github-pat`, `discord-webhook` — typed into Jenkins' credential store, never
+into a file in any repo), create the `ers-monolith` Pipeline job pointed at this repo's
+`Jenkinsfile`, and press **Build Now** once so polling arms itself.
+
+No local toolchain is needed for CI: the pipeline builds in a `maven:3.8-openjdk-8` container
+(the JDK-8 pin travels with the pipeline) and seeds a disposable `postgres:16` container per
+build using the same `ers_script.sql` recipe as Step 1 above. Your Step-1 database is never
+touched by CI.
+
+### Reading the weather
+
+Jenkins summarizes each job's recent health as a weather icon — **sunshine** means the last
+several builds all passed. The pipeline's scan policy is *warn-then-ratchet*: dependency and
+static-analysis findings first mark a build **UNSTABLE** (yellow — visible, not fatal) so the
+initial backlog can be triaged; after triage, the `catchError` wrappers in the Jenkinsfile get
+deleted and those scans become hard gates. A secret in the working tree is **red** from day
+one. The result reads at a glance: sunshine = ship-shape, yellow = a scan wants triage,
+red = fix before anything else.
+
+### Can this thing be used to break into my machine?
+
+Reasonable fear; here is the actual exposure. The container binds `127.0.0.1:8090` — the port
+does not exist on the LAN or the internet. And because triggering is *polling* (Jenkins dials
+out to GitHub), there is no inbound webhook, no port-forward, no tunnel: nothing on the
+network can reach this Jenkins at all. The one honest caveat: the container mounts the Docker
+socket (that's how it runs build containers), which is root-equivalent *on this host* — which
+is exactly why the loopback bind and pull-only triggers are non-negotiable, and why the admin
+password should be a real one even though it's "just local".
 
 ---
 

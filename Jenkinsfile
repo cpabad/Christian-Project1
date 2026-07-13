@@ -1,25 +1,67 @@
 /*
- * ERS monolith CI pipeline — SKELETON (Fable, 2026-07-13).
+ * ERS monolith CI pipeline — FULLY IMPLEMENTED (Fable, 2026-07-13).
  *
- * Same contract as the microservice repo's Jenkinsfile: every target stage exists, the
- * pipeline runs green, and the application is untouched — no Java, no dependency, no
- * behavior change. TODO(Opus) stages are inert echo stubs; locked decisions live in
- * ROADMAP.md Phase 7.5, setup steps in the microservice repo's jenkins/README.md
- * (one Jenkins controller serves both repos).
+ * What Jenkins is here: the team you don't have. On every push (SCM poll, ~2 min) it builds
+ * from a FRESH clone in CLEAN containers, runs all 125 tests against a THROWAWAY seeded
+ * database, and runs three security scans — so "green" means "a neutral witness rebuilt and
+ * re-verified everything from scratch", not "it worked on my machine". The weather icon on
+ * the job (sunshine = recent builds stable) is the health summary.
+ *
+ * Scan policy (owner-ruled 2026-07-13): WARN-THEN-RATCHET. SCA and SAST findings mark the
+ * build UNSTABLE (yellow) — visible, never ignored, but not red — until the initial backlog
+ * is triaged; then remove the catchError wrappers to make them hard gates. The secrets scan
+ * is a hard RED from day one: a credential in the working tree is never a warning.
  *
  * Repo-specific facts an implementer must not "fix":
  *   - The Maven project is ReimbursementManagement/, NOT the repo root.
- *   - This codebase is pinned to Java 8 (maven.compiler 1.8) — hence the JDK-8 Maven
- *     image. Building on a newer JDK is the classic trap here (see STARTUP.md).
- *   - The test suite needs a seeded Postgres (db script + env vars — STARTUP.md).
+ *   - Java 8 pin (maven.compiler 1.8) -> maven:3.8-openjdk-8 image. The container sidesteps
+ *     the host's java-21/javac-8 JAVA_HOME trap entirely (see STARTUP.md).
+ *   - The repository tests are integration tests: they need Postgres seeded from
+ *     ers_script.sql IN ITS INSERT ORDER (queries have no ORDER BY). The script never
+ *     creates its schema and its search_path line is misspelled — the seed step below
+ *     prepends the real CREATE SCHEMA and strips the broken lines (same recipe as STARTUP.md).
+ *   - DB config is read from env vars dburl/dbuser/dbpassword (lowercase, case-sensitive).
+ *
+ * Infra notes:
+ *   - Controller runs in Docker with the host socket (docker-outside-of-docker). Workspace
+ *     paths only reach sibling containers through the Docker Pipeline plugin's .inside()
+ *     (it uses --volumes-from) — NEVER `docker run -v $WORKSPACE:...`, that path doesn't
+ *     exist on the host side of the socket.
+ *   - Scanner images ship ENTRYPOINTs; .inside() needs --entrypoint='' or the plugin's
+ *     `cat` keep-alive becomes `trivy cat` and dies.
+ *   - Maven cache: workspace-local repo (-Dmaven.repo.local) — survives between builds in
+ *     the job workspace, no root-owned named-volume permission headaches.
+ *
+ * Boundary: this file is the whole CI footprint of this repo. The GitHub->GitLab mirror
+ * (microservice repo, .github/workflows/) is a separate Fable-owned system — never touch it
+ * from Jenkins work.
  */
-pipeline {
-  agent {
-    docker {
-      image 'maven:3.8-openjdk-8'            // JDK 8 on purpose — the monolith's pin
-      args '-v ers-jenkins-m2:/root/.m2'     // shared Maven cache with the other job
+
+def notifyDiscord(String message) {
+  // Webhook URL lives ONLY in the Jenkins credentials store (Secret text, id: discord-webhook).
+  // No credential yet -> log and move on; notification must never break the build.
+  try {
+    withCredentials([string(credentialsId: 'discord-webhook', variable: 'DISCORD_URL')]) {
+      def safe = message.replace('\\', '\\\\').replace('"', '\\"')
+      writeFile file: '.discord-payload.json', text: "{\"content\": \"${safe}\"}"
+      sh 'curl -fsS -o /dev/null -H "Content-Type: application/json" -d @.discord-payload.json "$DISCORD_URL" || true'
     }
+  } catch (ignored) {
+    echo "Discord notify skipped - add a Secret-text credential with id 'discord-webhook' to enable pings."
   }
+}
+
+def blame() {
+  // "Who to blame" — on a one-person team this is a mirror, but it's the habit that counts.
+  try {
+    return sh(script: "git log -1 --pretty='%an'", returnStdout: true).trim()
+  } catch (ignored) {
+    return 'unknown'
+  }
+}
+
+pipeline {
+  agent any   // the controller node — it owns the docker CLI; heavy work runs in containers
 
   triggers {
     pollSCM('H/2 * * * *')   // polling, not webhooks: GitHub can't reach a non-public box
@@ -30,54 +72,138 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '25'))
   }
 
+  environment {
+    MAVEN_IMAGE = 'maven:3.8-openjdk-8'                      // the monolith's JDK-8 pin
+    MVN = 'mvn -B -ntp -Dmaven.repo.local="$WORKSPACE/.m2repo"'
+  }
+
   stages {
+
     stage('Build') {
       steps {
-        dir('ReimbursementManagement') {
-          sh 'mvn -B -ntp -DskipTests package'
+        script {
+          docker.image(env.MAVEN_IMAGE).inside {
+            dir('ReimbursementManagement') {
+              sh "$MVN -DskipTests package"
+            }
+          }
+        }
+      }
+      post {
+        success {
+          archiveArtifacts artifacts: 'ReimbursementManagement/target/*.war', fingerprint: true
         }
       }
     }
 
-    stage('Unit tests') {
+    stage('Tests — 125 against a fresh database') {
       steps {
-        // TODO(Opus): needs a seeded Postgres (schema + seed per STARTUP.md) and the DB env
-        // vars before this becomes:  dir('ReimbursementManagement') { sh 'mvn -B -ntp test' }
-        // then:  junit 'ReimbursementManagement/target/surefire-reports/*.xml'
-        echo 'STUB — unit tests not wired yet (needs in-pipeline DB provisioning)'
+        script {
+          // Prepare the seed exactly like STARTUP.md: prepend the CREATE SCHEMA the script
+          // forgot, strip its broken search_path lines and destructive DROPs, keep INSERT order.
+          sh '''
+            { echo 'CREATE SCHEMA "ExpenseReimbursementManagementSystem";'
+              echo 'SET search_path TO "ExpenseReimbursementManagementSystem";'
+              sed '/^SHOW search_path/d;/^SET search_path/d;/^DROP TABLE/d' ReimbursementManagement/ers_script.sql
+            } > .ci-seed.sql
+          '''
+          // Throwaway Postgres per build (hermetic — owner-ruled): withRun guarantees the
+          // container dies even when tests fail. Sibling containers join its network
+          // NAMESPACE (--network container:...), so 127.0.0.1:5432 is the sidecar.
+          docker.image('postgres:16-alpine').withRun('-e POSTGRES_USER=ers -e POSTGRES_PASSWORD=ers -e POSTGRES_DB=ers') { db ->
+            docker.image('postgres:16-alpine').inside("--network container:${db.id} -e PGPASSWORD=ers") {
+              sh '''
+                for i in $(seq 1 60); do pg_isready -h 127.0.0.1 -U ers -d ers -q && break; sleep 1; done
+                psql -h 127.0.0.1 -U ers -d ers -v ON_ERROR_STOP=1 -f .ci-seed.sql
+              '''
+            }
+            docker.image(env.MAVEN_IMAGE)
+                  .inside("--network container:${db.id} -e dburl=jdbc:postgresql://127.0.0.1:5432/ers -e dbuser=ers -e dbpassword=ers") {
+              dir('ReimbursementManagement') {
+                sh "$MVN test"
+              }
+            }
+          }
+        }
+      }
+      post {
+        always {
+          junit allowEmptyResults: true, testResults: 'ReimbursementManagement/target/surefire-reports/*.xml'
+        }
       }
     }
 
-    stage('SCA — dependency CVEs') {
+    stage('SCA — dependency CVEs (Trivy)') {
       steps {
-        // TODO(Opus): same tool as the microservice job (Dependency-Check or Trivy). A Java 8
-        // tree will surface OLD CVEs — expect real findings here, that is the point.
-        echo 'STUB — SCA scan not wired yet'
+        script {
+          // Trivy over Dependency-Check on purpose: no NVD API key to manage (credential
+          // friction is the enemy in this shop). Cache in the workspace: jenkins-uid writable.
+          docker.image('aquasec/trivy:latest').inside("--entrypoint='' -e TRIVY_CACHE_DIR=$WORKSPACE/.trivy-cache") {
+            catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE',
+                       message: 'SCA findings (HIGH/CRITICAL) — warn-mode; see log. Ratchet: delete this catchError.') {
+              sh 'trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --no-progress ReimbursementManagement'
+            }
+          }
+        }
       }
     }
 
-    stage('SAST — static analysis') {
+    stage('SAST — static analysis (Semgrep)') {
       steps {
-        // TODO(Opus): SpotBugs + FindSecBugs (use versions that still support Java 8 bytecode).
-        echo 'STUB — SAST scan not wired yet'
+        script {
+          // Semgrep instead of SpotBugs HERE only: it reads source in its own container, so
+          // the JDK-8 toolchain pin never matters. The microservice (Java 17) uses SpotBugs
+          // + FindSecBugs per the ROADMAP. HOME=/tmp: the container runs as the jenkins uid.
+          docker.image('semgrep/semgrep:latest').inside("--entrypoint='' -e HOME=/tmp") {
+            catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE',
+                       message: 'SAST findings — warn-mode; see log. Ratchet: delete this catchError.') {
+              sh 'semgrep scan --config p/java --config p/security-audit --error ReimbursementManagement/src'
+            }
+          }
+        }
       }
     }
 
-    stage('Secrets scan') {
+    stage('Secrets — gitleaks (hard gate)') {
       steps {
-        // TODO(Opus): gitleaks over the checkout; fail on any hit.
-        echo 'STUB — secrets scan not wired yet'
+        script {
+          // Working tree only (--no-git): history contains long-revoked keys from before the
+          // 2026 cleanup; a baseline-file history scan is a later, separate step. --redact so
+          // a caught secret is not immortalized in the CI log. NO catchError: a live secret
+          // in current files is red, full stop.
+          // The workspace persists between builds (that's how .m2repo caching works), so the
+          // allowlist below keeps gitleaks off the cached third-party jars and scanner caches
+          // — we scan OUR files, not the internet's.
+          sh '''
+            cat > .gitleaks-ci.toml <<'EOF'
+[extend]
+useDefault = true
+
+[allowlist]
+paths = [
+  ".m2repo/.*",
+  ".trivy-cache/.*",
+  "ReimbursementManagement/target/.*",
+]
+EOF
+          '''
+          docker.image('zricethezav/gitleaks:latest').inside("--entrypoint=''") {
+            sh 'gitleaks detect --source . --no-git --redact --verbose --config .gitleaks-ci.toml'
+          }
+        }
       }
     }
   }
 
   post {
     failure {
-      // TODO(Opus): Discord webhook (credential id: discord-webhook) — status/branch/author.
-      echo 'STUB — Discord failure notification not wired yet'
+      script { notifyDiscord("🔴 **${env.JOB_NAME} #${env.BUILD_NUMBER} FAILED** on `${env.GIT_BRANCH ?: 'main'}` — blame: ${blame()} — ${env.BUILD_URL}") }
+    }
+    unstable {
+      script { notifyDiscord("⚠️ **${env.JOB_NAME} #${env.BUILD_NUMBER} UNSTABLE** — a security scan has findings (warn-mode) — ${env.BUILD_URL}") }
     }
     fixed {
-      echo 'STUB — Discord recovery notification not wired yet'
+      script { notifyDiscord("☀️ **${env.JOB_NAME} #${env.BUILD_NUMBER} back to sunshine** — ${env.BUILD_URL}") }
     }
   }
 }
