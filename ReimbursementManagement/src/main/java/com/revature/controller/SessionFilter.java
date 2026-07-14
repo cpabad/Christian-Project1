@@ -49,7 +49,12 @@ public class SessionFilter implements Filter {
 			HttpSession session = httpRequest.getSession(false);
 			FlowTrace.log(SessionFilter.class, httpRequest.getMethod() + " " + httpRequest.getRequestURI()
 					+ " received; session: " + (session == null ? "none" : "active (role=" + session.getAttribute("role") + ")"));
-			if(session == null && httpRequest.getRequestURI().equals("/ReimbursementManagement/") == false && httpRequest.getMethod().equals("GET")) {
+			// /health is exempt from the login forward: monitor probes (Uptime Kuma, K8s-style
+			// checks) are anonymous GETs, and forwarding them to the login view would hand the
+			// monitor a false 200 "everything is fine" page instead of the real health verdict.
+			if(session == null && httpRequest.getRequestURI().equals("/ReimbursementManagement/") == false
+					&& httpRequest.getRequestURI().equals("/ReimbursementManagement/health") == false
+					&& httpRequest.getMethod().equals("GET")) {
 				FlowTrace.log(SessionFilter.class, "auth check: FAIL (no session on a non-landing GET) - forwarding to app/login view");
 				request.getRequestDispatcher("app/login").forward(httpRequest, response);
 				return;
