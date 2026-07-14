@@ -89,7 +89,14 @@ pipeline {
         script {
           docker.image(env.MAVEN_IMAGE).inside {
             dir('ReimbursementManagement') {
-              sh "$MVN -DskipTests package"
+              // -Djacoco.skip goes with -DskipTests: the pom binds jacoco report/check to the
+              // test PHASE, which still runs under skipTests - and because the workspace
+              // persists between builds, jacoco loads the PREVIOUS build's jacoco.exec against
+              // freshly recompiled classes ("execution data does not match"), reads the changed
+              // classes as uncovered, and fails the coverage gate on stale data (build 2 died
+              // exactly this way). The real gate runs in the Tests stage, where `mvn test`
+              // regenerates jacoco.exec before checking it.
+              sh "$MVN -DskipTests -Djacoco.skip=true package"
             }
           }
         }
@@ -101,7 +108,7 @@ pipeline {
       }
     }
 
-    stage('Tests — 125 against a fresh database') {
+    stage('Tests — full suite against a fresh database') {
       steps {
         script {
           // Prepare the seed exactly like STARTUP.md: prepend the CREATE SCHEMA the script
