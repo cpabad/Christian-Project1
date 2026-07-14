@@ -5,7 +5,7 @@ even after a long time away, the User can get it running without remembering the
 
 ---
 
-## Current state (verified by live run, 2026-07-10)
+## Current state (verified by live run, 2026-07-14)
 
 The full record of every change and why is in `CHANGELOG.md` - that is the re-onboarding
 read. The fastest way to re-learn how the app *works* is the FLOW trace (section below):
@@ -13,14 +13,17 @@ start the app and watch it narrate every request, layer by layer.
 
 Verified facts as of this refresh:
 
-- **Test suite: 125/125 green** on a plain `mvn test` (needs the seeded DB + env vars, Step 2).
-- **Service-layer coverage: 99.46% instruction (1298/1305)**, measured by JaCoCo, enforced by
+- **Test suite: 132/132 green** on a plain `mvn test` (needs the seeded DB + env vars, Step 2).
+- **Service-layer coverage: 99.48% instruction (1328/1335)**, measured by JaCoCo, enforced by
   a build-failing `check` rule at >= 98%. Methodology and denominator are in `COVERAGE.md`.
 - **Database design: 5NF / BCNF**, full analysis in `NORMALIZATION.md` (15 tables, verified
   against the live schema).
 - **CI: a full Jenkins pipeline** (`Jenkinsfile`, repo root) rebuilds, re-tests, and
   security-scans every push in clean containers — see
   [the Jenkins section](#jenkins--the-teammate-who-never-goes-home) for why and how.
+- **Monitoring: Uptime Kuma** (`monitoring/`, host-level Docker Compose) polls the app's
+  `/health` endpoint and Jenkins around the clock — see
+  [the Uptime Kuma section](#uptime-kuma--is-the-app-healthy-right-now).
 - **No known vulnerabilities in this monolith** as of 2026-07-10: the 2026-06 hardening pass
   (Log4Shell, BCrypt, CORS, dead filters, dependency CVEs, write-path auth) plus the stored-XSS
   closure of 2026-07-09 (`innerHTML` -> `textContent`, commit 1c7c199). Two honest caveats:
@@ -164,7 +167,7 @@ the Java version.)
 
 > **Success check.** The **first** build is slow - Maven downloads every dependency to `~/.m2`
 > (a minute or more; it is not hung). A successful build ends with `BUILD SUCCESS`, a
-> `Tests run: 125, Failures: 0, Errors: 0` line, and the WAR file existing:
+> `Tests run: 132, Failures: 0, Errors: 0` line, and the WAR file existing:
 > ```
 > ls -lh ReimbursementManagement/target/ReimbursementManagement-0.0.1-SNAPSHOT.war
 > ```
@@ -218,12 +221,15 @@ http://localhost:8080/ReimbursementManagement/
 > `{"status":"UP"}`. This is the heartbeat endpoint external monitors poll (see `monitoring/`);
 > `{"status":"DOWN"}` (HTTP 503) means the app is up but cannot reach Postgres.
 
-### Step 5 - Log in as an employee
+### Step 5 - Log in
 
-On the landing page, type the username and password, then click **Employee Login**.
+On the landing page, type the username and password, then click **Login** - there is one
+button for both roles. The server answers with your role, and the page routes you to the
+matching homepage (employee or supervisor); you never tell the app which kind of user you
+are.
 
-- Employee account: **`employee2`** / **`employeePassword`**
-- Supervisor account (use the **Manager Login** button): **`employee1`** / **`employeePassword`**.
+- Employee account: **`employee2`** / **`employeePassword`** (lands on the employee homepage)
+- Supervisor account: **`employee1`** / **`employeePassword`** (lands on the supervisor homepage)
 
 Why `employee2`? The seed defines two roles - Supervisor (role 1) and Employee (role 2).
 `admin` and `employee1` are Supervisors; `employee2`, `employee3`, and `employee4` are
@@ -233,9 +239,9 @@ Employees. The employee screens only work for an account whose role is Employee.
 > a Supervisor in the seed, but its stored bcrypt hash is **not** `employeePassword` (login
 > returns 400/401) - use `employee1` for the supervisor flow.
 
-> **Success check.** A correct login lands you on the employee home page (or a "Welcome"
-> response), and the Tomcat FLOW trace shows `... login decision: SUCCESS ... creating the
-> session`. "Invalid Credentials" (400) means wrong username/password for the role - use exactly
+> **Success check.** A correct login lands you on the homepage for your role, and the Tomcat
+> FLOW trace shows `... login decision: SUCCESS ... creating the
+> session`. "Invalid Credentials" (400) means wrong username or password - use exactly
 > `employee2` / `employeePassword`. "You already have a current session" means you are still
 > logged in from before - log out (or use a private window) and retry. **That's it - the app is
 > running.** From here, read [Watch the app think](#watch-the-app-think---the-flow-trace) to learn
@@ -263,7 +269,7 @@ written to log files. (`log4j2-test.xml` ships with it off, so `mvn test` output
 **How to read a line:**
 
 ```
-FLOW [33ad|7] UserService → authenticate: identifier 'employee2' has no '@' - treating it as a username
+FLOW [2283|6] UserService → authenticate: identifier 'employee2' has no '@' - treating it as a username
       ^    ^  ^              ^
       |    |  |              what happened - at decision points, WHY it happened
       |    |  the class speaking
@@ -274,16 +280,16 @@ FLOW [33ad|7] UserService → authenticate: identifier 'employee2' has no '@' - 
 **A real excerpt** (the `employee2` login from this guide's own verification run, trimmed):
 
 ```
-FLOW [33ad|1]  SessionFilter → POST /ReimbursementManagement/app/employee/login received; session: none
-FLOW [33ad|3]  EmployeeFilter → role check: EXEMPT (login URL, no session required yet) - continuing down the filter chain
-FLOW [33ad|5]  RequestHelper → routing POST /employee/login through the switch
-FLOW [33ad|7]  UserService → authenticate: identifier 'employee2' has no '@' - treating it as a username
-FLOW [33ad|8]  UserRepositoryImpl → findByUsername: opening a Hibernate session + transaction
-FLOW [33ad|9]  HibernateSessionFactory → first use - building the singleton SessionFactory ... (expensive, happens once)
-FLOW [33ad|15] User → no-arg constructor fired (Hibernate hydration builds entities this way)
-FLOW [33ad|17] UserService → authenticate outcome: BCrypt verified the password for 'employee2' - returning the user
-FLOW [33ad|18] RequestHelper → login decision: SUCCESS for 'employee2' (role Employee) - creating the session
-FLOW [33ad|20] SessionFilter → response on its way to the client - request frame ends
+FLOW [2283|1]  SessionFilter → POST /ReimbursementManagement/app/login received; session: none
+FLOW [2283|4]  RequestHelper → routing POST /login through the switch
+FLOW [2283|5]  RequestHelper → matched /login - calling UserService.authenticate for 'employee2'
+FLOW [2283|6]  UserService → authenticate: identifier 'employee2' has no '@' - treating it as a username
+FLOW [2283|7]  UserRepositoryImpl → findByUsername: opening a Hibernate session + transaction
+FLOW [2283|8]  HibernateSessionFactory → first use - building the singleton SessionFactory ... (expensive, happens once)
+FLOW [2283|14] User → no-arg constructor fired (Hibernate hydration builds entities this way)
+FLOW [2283|16] UserService → authenticate outcome: BCrypt verified the password for 'employee2' - returning the user
+FLOW [2283|17] RequestHelper → login decision: SUCCESS for 'employee2' (role Employee) - creating the session
+FLOW [2283|19] SessionFilter → response on its way to the client - request frame ends
 ```
 
 **Reading cues:**
@@ -307,7 +313,7 @@ the narrative from memory, run the real request, diff. Rules live in `CLAUDE.md`
 ## Navigating the site (employee)
 
 ```
-index.html  --click Employee Login-->  POST /app/employee/login   (creates your session)
+index.html  --click Login-->  POST /app/login   (creates your session; the role in the answer picks your homepage)
    |
    v
 employeehomepage.html
@@ -325,9 +331,13 @@ hands it to **RequestHelper**, which routes by URL to a **service**, which calls
 **repository**, which uses **Hibernate** to talk to **PostgreSQL**; the JSON answer comes back
 to the page's request.
 
-> The login lives in the inline `<script>` of `index.html`, posting to `/app/employee/login` /
-> `/app/manager/login` as mapped above. (The old dead login files - `login.html`, `JS/index.js`,
-> `JS/login2.js`, `JS/logout.js` - were deleted 2026-07-10; see CHANGELOG.)
+> The login lives in the inline `<script>` of `index.html`, posting to the single `/app/login`
+> endpoint (consolidated 2026-07 from the old `/app/employee/login` + `/app/manager/login`
+> pair; the server's answer carries the role, and the script routes to the employee or
+> supervisor homepage from that - see WALKTHROUGH.md). A supervisor's diagram differs only in
+> the URLs: the homepage is `supervisorhomepage.html` and its buttons call `/app/manager/*`.
+> (The old dead login files - `login.html`, `JS/index.js`, `JS/login2.js`, `JS/logout.js` -
+> were deleted 2026-07-10; see CHANGELOG.)
 
 Tip - see both halves of a request at once: keep the FLOW trace (section above) in your
 terminal and the browser's **Network** tab (F12) open while you click. The Network tab shows
@@ -501,7 +511,7 @@ touched by CI.
 
 A build ends in one of three states, and each means something specific here:
 
-- **SUCCESS (blue/green)** — the build, all 125 tests, and every scan passed. No action.
+- **SUCCESS (blue/green)** — the build, the full test suite, and every scan passed. No action.
 - **UNSTABLE (yellow)** — the build and tests passed but a security scan reported findings.
   This is the *warn-then-ratchet* policy: dependency (SCA) and static-analysis (SAST) findings
   first mark the build UNSTABLE — visible, never ignored, but not fatal — so the initial
@@ -523,6 +533,44 @@ network can reach this Jenkins at all. The one honest caveat: the container moun
 socket (that's how it runs build containers), which is root-equivalent *on this host* — which
 is exactly why the loopback bind and pull-only triggers are non-negotiable, and why the admin
 password should be a real one even though it's "just local".
+
+---
+
+## Uptime Kuma — is the app healthy right now?
+
+Jenkins answers "did the last *change* build and pass?"; **Uptime Kuma** answers the other
+production question: "has the *running* app been up and healthy for the last hours?" It lives
+in this repo's `monitoring/` directory as its own host-level Docker Compose service —
+deliberately outside Tomcat, Jenkins, and K3s, so the monitor never shares fate with anything
+it monitors. Full setup, the reasoning, and the cloud analogies (K8s probes, ECS health
+checks, Route 53) are in [`monitoring/README.md`](monitoring/README.md).
+
+Start it (and it stays up across reboots — `restart: unless-stopped`):
+
+```bash
+cd monitoring
+docker compose up -d
+```
+
+Dashboard: **http://127.0.0.1:3001** (loopback-only, same stance as Jenkins). First visit
+creates the admin account; Kuma keeps all config and history in its own named volume — no
+secrets in this repo. Two monitors are configured:
+
+| Monitor | What it polls | Healthy means |
+|---|---|---|
+| ERS monolith | `http://localhost:8080/ReimbursementManagement/health` | HTTP 200 **and** keyword `UP` in the body |
+| Jenkins | `http://127.0.0.1:8090/login` | HTTP 200 |
+
+The monolith monitor is a *keyword* monitor on purpose: `/health` (Step 4's success check)
+answers 200 `{"status":"UP"}` only when the app can reach Postgres, and 503
+`{"status":"DOWN"}` when it cannot — so the keyword check distinguishes "Tomcat is up but the
+database is gone" from healthy.
+
+> **Success check.** `docker compose ps` in `monitoring/` shows the container `Up`, the
+> dashboard loads on 127.0.0.1:3001, and both monitors show green with response-time history
+> accumulating. Stop Postgres and the monolith monitor goes red within one poll interval
+> (keyword `UP` missing) while the Jenkins monitor stays green — that separation is the tool
+> doing its job.
 
 ---
 

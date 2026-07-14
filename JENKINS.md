@@ -1,7 +1,7 @@
 # Jenkins CI — this repo's pipeline
 
 Continuous integration for the monolith. On every push (and on demand via **Build Now**),
-Jenkins rebuilds the WAR from a fresh clone, runs all 125 tests against a throwaway seeded
+Jenkins rebuilds the WAR from a fresh clone, runs the full test suite against a throwaway seeded
 database, and runs three security scans. The pipeline is fully implemented in the
 [`Jenkinsfile`](Jenkinsfile) at the repo root — its header comment is the detailed design doc;
 this file is the operator's view.
@@ -27,8 +27,8 @@ Docker container is fully isolated from it.
 | Stage | What runs | On findings |
 | --- | --- | --- |
 | Build | `mvn package` in a `maven:3.8-openjdk-8` container (the JDK-8 pin travels with CI) | FAILURE |
-| Tests | 125 tests against a per-build `postgres:16` sidecar seeded from `ers_script.sql` | FAILURE |
-| SCA | Trivy — known CVEs in dependencies (HIGH/CRITICAL) | UNSTABLE (warn-mode) |
+| Tests | the full suite against a per-build `postgres:16` sidecar seeded from `ers_script.sql` | FAILURE |
+| SCA | Trivy — known CVEs in dependencies (HIGH/CRITICAL) | FAILURE (ratcheted 2026-07-14) |
 | SAST | Semgrep — dangerous patterns in our own source | UNSTABLE (warn-mode) |
 | Secrets | gitleaks — credentials in the working tree | FAILURE (no grace period) |
 
@@ -45,10 +45,12 @@ machine?").
 - **SUCCESS** — build, tests, and scans all clean. The working agreement: once Jenkins is
   green, stop worrying about the code until a scan raises a concern.
 - **UNSTABLE** — a security scan reported findings. This is the *warn-then-ratchet* policy:
-  SCA/SAST findings warn first so the initial backlog can be triaged without blocking work.
-  **The ratchet:** after triage, delete the `catchError` wrappers in the `Jenkinsfile` and
-  those scans become hard failures.
-- **FAILURE** — compilation, a test, or the secrets gate broke. Fix before anything else.
+  a scan warns first so its initial backlog can be triaged without blocking work.
+  **The ratchet:** after triage, delete that scan's `catchError` wrapper in the `Jenkinsfile`
+  and it becomes a hard failure. SCA was ratcheted 2026-07-14 (the 36-finding backlog was
+  fixed - see CHANGELOG "CVE remediation"); SAST (currently 0 findings) still warns.
+- **FAILURE** — compilation, a test, a HIGH/CRITICAL dependency CVE, or the secrets gate.
+  Fix before anything else.
 
 ## Boundary rule
 

@@ -2,7 +2,7 @@
  * ERS monolith CI pipeline — FULLY IMPLEMENTED (Fable, 2026-07-13).
  *
  * What Jenkins is here: the team you don't have. On every push (SCM poll, ~2 min) it builds
- * from a FRESH clone in CLEAN containers, runs all 125 tests against a THROWAWAY seeded
+ * from a FRESH clone in CLEAN containers, runs the full test suite against a THROWAWAY seeded
  * database, and runs three security scans — so "green" means "a neutral witness rebuilt and
  * re-verified everything from scratch", not "it worked on my machine". The job's
  * build-stability indicator summarizes recent health at a glance.
