@@ -273,6 +273,54 @@ The four `christian/frontend-facelift` commits (login, employee, supervisor page
   Runs `network_mode: host` (verified necessary: ufw on this box drops all docker
   bridge-to-host traffic) with the dashboard bound loopback-only at `127.0.0.1:3001`.
 
+## 2026-07 - Login consolidation & a CI coverage-gate fix
+
+### CI - the coverage gate failed on stale data from the previous build
+- **Symptom.** The first Jenkins build after the Phase 7 merge went red in the **Build** stage:
+  `jacoco ... check` reported `com.revature.service` at 0.75 instruction coverage against the
+  0.98 minimum - while the log plainly said `Tests are skipped.` A local `mvn test` on the same
+  commit passed the same gate at 99%+.
+- **Root cause (two facts colliding).** (1) The POM binds JaCoCo's `report` and `check` goals to
+  the `test` *phase*, and `-DskipTests` only silences Surefire - the phase still runs, so JaCoCo
+  still executed inside the tests-skipped Build stage. (2) The Jenkins workspace persists between
+  builds (that is how the Maven cache works), so that JaCoCo pass loaded the **previous build's**
+  `jacoco.exec` against freshly recompiled classes. JaCoCo matches execution data to classes by
+  checksum (`execution data ... does not match`), silently treats the mismatched classes as
+  uncovered, and the merge's changed `UserService` read as 0% - a gate verdict computed entirely
+  from stale data. Build 1 had "passed" only because a fresh workspace has no `jacoco.exec` at
+  all, which JaCoCo skips without checking.
+- **Resolution.** The Build stage now runs `-DskipTests -Djacoco.skip=true` - a compile/package
+  stage has no business grading coverage. The real gate is untouched: the Tests stage's
+  `mvn test` regenerates `jacoco.exec` from this build's classes before checking it.
+- **Takeaway.** `skipTests` skips the *test runner*, not the *test phase* - everything else bound
+  to that phase still fires. And any tool that persists state into a reused CI workspace must be
+  either regenerated or disabled per stage; a gate that can read stale inputs is a gate that can
+  lie in both directions.
+
+### Login - two buttons and two endpoints for one question
+- **Symptom.** The landing page asked the *user* to declare their role: an **Employee Login** and
+  a **Manager Login** button, backed by two endpoints (`/app/employee/login`,
+  `/app/manager/login`) that differed only in a post-authentication role gate - clicking the
+  wrong button with valid credentials got a confusing 400. Credentials also traveled in the
+  query string, where Tomcat access logs and any proxy record them.
+- **Root cause.** Login (authentication - WHO are you?) was entangled with page selection and
+  access control (authorization - what may you do?). The role gate on the manager endpoint
+  duplicated, at the wrong layer, what `SessionFilter`/`ManagerFilter` already enforce on every
+  `/manager/` request - a shape that dates to the original time-crunch build.
+- **Resolution.** One **Login** button posting to one `POST /app/login`, credentials
+  form-encoded in the POST body. The server authenticates, creates the session, and returns the
+  user's role; the page script routes on the answer - `"Supervisor"` opens the supervisor
+  homepage, anything else the employee homepage. The old endpoints and the role gate are
+  deleted; a role-declaring client no longer exists, and authorization stays where it always
+  belonged (the filters answer 401 if a tampered client wanders into `/manager/`). Verified
+  live end-to-end: both roles land on their pages, bad credentials 400, the old URLs 401,
+  filter guards intact; suite 132/132. `WALKTHROUGH.md` was re-captured against the new route
+  (19 hops - the role filters no longer appear at login, which dissolves the old
+  login-URL-exemption chicken-and-egg on that path).
+- **Takeaway.** Never ask the client a question the server must answer anyway. Authentication
+  establishes identity; authorization consumes it per-request; navigation is just a courtesy
+  built on the answer - three concerns, three homes.
+
 ## Planned / not yet done
 - **Optional: git history scrub.** The exposed AWS key pair was revoked and all EC2 instances terminated (2026-07-06), so the credential is dead; scrubbing `s3.properties` from git history with `git-filter-repo` (as was done for P3) remains available as pure tidiness.
 - **Microservice refactor (Phase 4) — extracted to its own repo.** The capstone began here in the `ers-service/` module (Spring Boot 3 scaffold → a Role tracer → the Request slice; the branch `christian/microservice` is frozen at that point) and then **moved to a dedicated repository**: [cpabad/Revature931-Project1-Microservice](https://github.com/cpabad/Revature931-Project1-Microservice), where the self-issued-JWT auth slice and the approval-chain slice are done. This repo stays the home of the monolith and the record of its Java 8 refresh; the 2026-07 service extractions make the remaining decomposition mostly mechanical, since the cascades now live in services that port to Spring beans directly.

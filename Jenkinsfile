@@ -2,7 +2,7 @@
  * ERS monolith CI pipeline — FULLY IMPLEMENTED (Fable, 2026-07-13).
  *
  * What Jenkins is here: the team you don't have. On every push (SCM poll, ~2 min) it builds
- * from a FRESH clone in CLEAN containers, runs all 125 tests against a THROWAWAY seeded
+ * from a FRESH clone in CLEAN containers, runs the full test suite against a THROWAWAY seeded
  * database, and runs three security scans — so "green" means "a neutral witness rebuilt and
  * re-verified everything from scratch", not "it worked on my machine". The job's
  * build-stability indicator summarizes recent health at a glance.
@@ -89,7 +89,14 @@ pipeline {
         script {
           docker.image(env.MAVEN_IMAGE).inside {
             dir('ReimbursementManagement') {
-              sh "$MVN -DskipTests package"
+              // -Djacoco.skip goes with -DskipTests: the pom binds jacoco report/check to the
+              // test PHASE, which still runs under skipTests - and because the workspace
+              // persists between builds, jacoco loads the PREVIOUS build's jacoco.exec against
+              // freshly recompiled classes ("execution data does not match"), reads the changed
+              // classes as uncovered, and fails the coverage gate on stale data (build 2 died
+              // exactly this way). The real gate runs in the Tests stage, where `mvn test`
+              // regenerates jacoco.exec before checking it.
+              sh "$MVN -DskipTests -Djacoco.skip=true package"
             }
           }
         }
@@ -101,7 +108,7 @@ pipeline {
       }
     }
 
-    stage('Tests — 125 against a fresh database') {
+    stage('Tests — full suite against a fresh database') {
       steps {
         script {
           // Prepare the seed exactly like STARTUP.md: prepend the CREATE SCHEMA the script

@@ -21,6 +21,8 @@ A reimbursement system for a company's employees. Employees can request reimburs
 * JavaScript
 * Jenkins (containerized CI: build, tests against a disposable database, Trivy SCA,
   Semgrep SAST, gitleaks secrets scan - see `JENKINS.md`)
+* Uptime Kuma (decoupled uptime monitoring: polls the app's `/health` endpoint and Jenkins
+  on a schedule and keeps the uptime history - see `monitoring/README.md`)
 
 ## Features
 
@@ -68,13 +70,17 @@ Prerequisites: Java 8 (JDK 1.8), Maven, PostgreSQL, and a servlet container (Tom
 ## Documentation
 * `STARTUP.md` - the complete run-it-locally guide: DB seed, build, deploy, login, the FLOW
   request trace, pitfalls, and troubleshooting.
-* `WALKTHROUGH.md` - one request (the employee login) narrated end-to-end through every
+* `WALKTHROUGH.md` - one request (the login) narrated end-to-end through every
   class, keyed to a real captured FLOW trace.
 * `JENKINS.md` - the CI pipeline: what each stage verifies, result semantics
   (SUCCESS/UNSTABLE/FAILURE), the warn-then-ratchet scan policy, and where the shared
   Jenkins controller lives.
+* `monitoring/README.md` - Uptime Kuma setup and philosophy: the always-on health monitor
+  for the running app (`/health`) and Jenkins, kept deliberately outside everything it
+  watches, plus how the same `/health` contract maps to K8s probes, ECS health checks, and
+  Route 53.
 * `CHANGELOG.md` - the 2026 refresh (build fix, test coverage, security hardening) with the
   root cause and fix for each change.
-* `COVERAGE.md` - how the service-layer test coverage (99.46%, enforced at >= 98%) is
+* `COVERAGE.md` - how the service-layer test coverage (99.48%, enforced at >= 98%) is
   measured and reproduced.
 * `NORMALIZATION.md` - the proof that the database design is in 5NF.
