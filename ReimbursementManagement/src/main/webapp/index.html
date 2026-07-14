@@ -29,7 +29,6 @@
             }
             body { display: grid; place-items: center; min-height: 100vh; }
             .login-card { width: 100%; max-width: 26rem; }
-            .login-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
         </style>
     </head>
 
@@ -43,53 +42,41 @@
                 <div id="login-div">
                     <input placeholder="Email or username" id="username" autocomplete="username" required />
                     <input placeholder="Password" type="password" id="password" autocomplete="current-password" required />
-                    <div class="login-actions">
-                        <button id="employeeloginButton">Employee Login</button>
-                        <button id="supervisorloginButton" class="secondary">Manager Login</button>
-                    </div>
+                    <button id="loginButton">Login</button>
                 </div>
             </article>
         </main>
         <script>
-                function employeelogin() {
+                // One login for both roles: the server authenticates and answers with the
+                // user's role; the role - not the button the user happened to click - decides
+                // which homepage to open. (Authorization on /manager/ URLs is enforced
+                // server-side by the filters either way; this routing is navigation, not access
+                // control.)
+                function login() {
                     let xhr = new XMLHttpRequest()
-                    loginUsername = document.getElementById('username').value
-                    loginPassword = document.getElementById('password').value
-                    let url = '/ReimbursementManagement/app/employee/login?' + 'username=' + loginUsername + '&' + 'password=' + loginPassword
+                    let loginUsername = document.getElementById('username').value
+                    let loginPassword = document.getElementById('password').value
                     xhr.onreadystatechange = function () {
-                        if (xhr.status === 200 && xhr.readyState === 4) {
-                            window.alert('Welcome back, ' + loginUsername + '!')
-                            window.open('/ReimbursementManagement/employeehomepage.html', '_self')
+                        if (xhr.readyState !== 4) return
+                        // FrontController JSON-serializes the returned string, so the body
+                        // arrives quoted ('"Supervisor"') - parse it, never compare raw text.
+                        let message = xhr.responseText ? JSON.parse(xhr.responseText) : 'Invalid Credentials'
+                        if (xhr.status === 200) {
+                            window.open(message === 'Supervisor'
+                                ? '/ReimbursementManagement/supervisorhomepage.html'
+                                : '/ReimbursementManagement/employeehomepage.html', '_self')
+                        } else {
+                            window.alert(message)
                         }
-
                     }
-                    xhr.open('POST', url)
-                    xhr.send()
+                    xhr.open('POST', '/ReimbursementManagement/app/login')
+                    // Credentials travel in the POST body, never the query string: URLs (query
+                    // string included) are written to Tomcat access logs and any proxy logs.
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+                    xhr.send('username=' + encodeURIComponent(loginUsername)
+                           + '&password=' + encodeURIComponent(loginPassword))
                 }
-                let employeeloginButton = document.getElementById('employeeloginButton')
-                employeeloginButton.addEventListener('click', employeelogin)
-
-                function supervisorlogin() {
-                    let xhr = new XMLHttpRequest()
-                    loginUsername = document.getElementById('username').value
-                    loginPassword = document.getElementById('password').value
-                    let url = '/ReimbursementManagement/app/manager/login?' + 'username=' + loginUsername + '&' + 'password=' + loginPassword
-                    xhr.onreadystatechange = function () {
-                        if (xhr.status === 200 && xhr.readyState === 4) {
-                            window.alert('Welcome back, ' + loginUsername + '!')
-                            window.open('/ReimbursementManagement/supervisorhomepage.html', '_self')
-                        }
-                        if (xhr.status === 400 && xhr.readyState === 4){
-                            window.alert('Invalid Credentials')
-                        }
-
-                    }
-                    xhr.open('POST', url)
-                    xhr.send()
-                }
-                let supervisorloginButton = document.getElementById('supervisorloginButton')
-                supervisorloginButton.addEventListener('click', supervisorlogin)
-
+                document.getElementById('loginButton').addEventListener('click', login)
         </script>
     </body>
 

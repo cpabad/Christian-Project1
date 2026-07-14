@@ -123,14 +123,16 @@ public class RequestHelper {
 		LOG.debug("Post request hitting the servlet mapped to: " + resource);
 		FlowTrace.log(RequestHelper.class, "routing POST " + resource + " through the switch");
 		switch(resource) {
-		case "/employee/login":
-		case "/manager/login":
-			FlowTrace.log(RequestHelper.class, "matched " + resource + " - calling UserService.authenticate for '" + request.getParameter("username") + "'");
+		// The ONE login endpoint (consolidated 2026-07 from /employee/login + /manager/login).
+		// Authentication answers WHO you are; the response body carries the role so the client
+		// can land on the right homepage. Authorization stays where it always was - the
+		// SessionFilter/ManagerFilter role checks on /manager/ URLs - so no per-role login
+		// gate is needed here anymore.
+		case "/login":
+			FlowTrace.log(RequestHelper.class, "matched /login - calling UserService.authenticate for '" + request.getParameter("username") + "'");
 			User user = new UserService().authenticate(request.getParameter("username"), request.getParameter("password"));
-			if(user == null || (resource.equals("/manager/login") && user.getRole().getRoleId() != 1)) {
-				FlowTrace.log(RequestHelper.class, "login decision: " + (user == null
-						? "authenticate returned null (unknown user or wrong password - deliberately indistinguishable)"
-						: "authenticated but not a Supervisor on the manager login") + " - answering 400 Invalid Credentials");
+			if(user == null) {
+				FlowTrace.log(RequestHelper.class, "login decision: authenticate returned null (unknown user or wrong password - deliberately indistinguishable) - answering 400 Invalid Credentials");
 				response.setStatus(400);
 				LOG.debug("Invalid Credentials");
 				return "Invalid Credentials";
