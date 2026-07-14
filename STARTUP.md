@@ -213,6 +213,10 @@ http://localhost:8080/ReimbursementManagement/
 > Tomcat 404, the WAR was not deployed under the name `ReimbursementManagement.war` - re-check the
 > `cp` target. If the terminal shows a stack trace mentioning `Session` or a JDBC URL, the DB
 > settings did not reach Tomcat (Step 3).
+>
+> One more check: `curl -s http://localhost:8080/ReimbursementManagement/health` should print
+> `{"status":"UP"}`. This is the heartbeat endpoint external monitors poll (see `monitoring/`);
+> `{"status":"DOWN"}` (HTTP 503) means the app is up but cannot reach Postgres.
 
 ### Step 5 - Log in as an employee
 

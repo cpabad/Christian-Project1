@@ -7,10 +7,13 @@
  * re-verified everything from scratch", not "it worked on my machine". The job's
  * build-stability indicator summarizes recent health at a glance.
  *
- * Scan policy (owner-ruled 2026-07-13): WARN-THEN-RATCHET. SCA and SAST findings mark the
- * build UNSTABLE (yellow) — visible, never ignored, but not red — until the initial backlog
- * is triaged; then remove the catchError wrappers to make them hard gates. The secrets scan
- * is a hard RED from day one: a credential in the working tree is never a warning.
+ * Scan policy (owner-ruled 2026-07-13, ratcheted 2026-07-14): SCA is now a HARD GATE — the
+ * initial 36-finding backlog was triaged and fixed (see CHANGELOG), so a HIGH/CRITICAL CVE,
+ * or a scanner crash, is red from here on. The first run taught the expensive lesson: a
+ * catchError around a scanner turns "the scanner crashed and scanned nothing" into the same
+ * yellow as "findings were reported" — warn-mode hid a 429 FATAL for a full build cycle.
+ * SAST stays warn-then-ratchet (Semgrep: currently 0 findings). The secrets scan has been a
+ * hard RED from day one: a credential in the working tree is never a warning.
  *
  * Repo-specific facts an implementer must not "fix":
  *   - The Maven project is ReimbursementManagement/, NOT the repo root.
@@ -74,7 +77,9 @@ pipeline {
 
   environment {
     MAVEN_IMAGE = 'maven:3.8-openjdk-8'                      // the monolith's JDK-8 pin
-    MVN = 'mvn -B -ntp -Dmaven.repo.local="$WORKSPACE/.m2repo"'
+    // Canonical local-repo path (~/.m2/repository under a workspace HOME): survives between
+    // builds AND is exactly where Trivy resolves versions offline (see the SCA stage).
+    MVN = 'mvn -B -ntp -Dmaven.repo.local="$WORKSPACE/.m2/repository"'
   }
 
   stages {
@@ -138,11 +143,14 @@ pipeline {
         script {
           // Trivy over Dependency-Check on purpose: no NVD API key to manage (credential
           // friction is the enemy in this shop). Cache in the workspace: jenkins-uid writable.
-          docker.image('aquasec/trivy:latest').inside("--entrypoint='' -e TRIVY_CACHE_DIR=$WORKSPACE/.trivy-cache") {
-            catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE',
-                       message: 'SCA findings (HIGH/CRITICAL) — warn-mode; see log. Ratchet: delete this catchError.') {
-              sh 'trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --no-progress ReimbursementManagement'
-            }
+          // HOME=$WORKSPACE: to report a CVE Trivy must first RESOLVE each pom's versions,
+          // which means reading ~/.m2/repository — the cache the Build stage already populated.
+          // Without it Trivy hits Maven Central and gets 429-throttled into a FATAL (exactly
+          // what build 1 hid behind the old catchError). HARD GATE — no catchError: findings
+          // are red, and so is a scanner crash. Accepted-risk CVEs live in the tracked
+          // .trivyignore (each entry carries its justification).
+          docker.image('aquasec/trivy:latest').inside("--entrypoint='' -e HOME=$WORKSPACE -e TRIVY_CACHE_DIR=$WORKSPACE/.trivy-cache") {
+            sh 'trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --no-progress --ignorefile ReimbursementManagement/.trivyignore ReimbursementManagement'
           }
         }
       }
@@ -171,9 +179,9 @@ pipeline {
           // 2026 cleanup; a baseline-file history scan is a later, separate step. --redact so
           // a caught secret is not immortalized in the CI log. NO catchError: a live secret
           // in current files is red, full stop.
-          // The workspace persists between builds (that's how .m2repo caching works), so the
-          // allowlist below keeps gitleaks off the cached third-party jars and scanner caches
-          // — we scan OUR files, not the internet's.
+          // The workspace persists between builds (that's how the .m2 Maven cache works), so
+          // the allowlist below keeps gitleaks off the cached third-party jars and scanner
+          // caches — we scan OUR files, not the internet's.
           sh '''
             cat > .gitleaks-ci.toml <<'EOF'
 [extend]
@@ -181,7 +189,7 @@ useDefault = true
 
 [allowlist]
 paths = [
-  ".m2repo/.*",
+  ".m2/.*",
   ".trivy-cache/.*",
   "ReimbursementManagement/target/.*",
 ]

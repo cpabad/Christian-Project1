@@ -1,0 +1,25 @@
+# Uptime Kuma - the decoupled heartbeat monitor for this box (see README.md).
+# Deliberately host-level compose, NOT part of the app, Jenkins, or K3s: a monitor must never
+# share fate with the things it monitors, or it goes dark at exactly the moment it matters.
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: ers-uptime-kuma
+    restart: unless-stopped
+    # Host networking, verified necessary on this box: ufw is active and DROPS traffic from
+    # docker bridge networks to the host, so a bridged container can never poll host Tomcat
+    # (host.docker.internal timed out on every gateway). On the host stack Kuma reaches
+    # Tomcat at localhost:8080 and Jenkins at its loopback-only 127.0.0.1:8090 directly.
+    network_mode: host
+    environment:
+      # Keep the dashboard loopback-only (same stance as Jenkins): host networking would
+      # otherwise bind 0.0.0.0. Reach it at http://127.0.0.1:3001
+      - UPTIME_KUMA_HOST=127.0.0.1
+      - UPTIME_KUMA_PORT=3001
+    volumes:
+      # Kuma keeps its config, monitor definitions, and uptime history in /app/data.
+      # A named volume survives container upgrades (docker compose pull && up -d).
+      - kuma-data:/app/data
+
+volumes:
+  kuma-data:

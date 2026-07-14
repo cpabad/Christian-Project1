@@ -1,5 +1,7 @@
 package com.revature.service;
 
+import java.nio.charset.StandardCharsets;
+
 import javax.persistence.NoResultException;
 
 import org.hibernate.NonUniqueObjectException;
@@ -66,6 +68,14 @@ public class UserService {
 			FlowTrace.log(UserService.class, "authenticate outcome: " + (user == null ? "repository returned null" : "blank password submitted") + " - returning null");
 			return null;
 		}
+		// Maximum password length established per CVE-2025-22228: BCrypt reads only the first
+		// 72 bytes of its input, so matches() would return true for ANY longer password whose
+		// first 72 bytes match. Reject oversized input before it can reach BCrypt.
+		// https://avd.aquasec.com/nvd/cve-2025-22228
+		if(exceedsBCrypt72ByteLimit(rawPassword)) {
+			FlowTrace.log(UserService.class, "authenticate outcome: password exceeds BCrypt's 72-byte input limit (CVE-2025-22228 guard) - returning null");
+			return null;
+		}
 		if(new BCryptPasswordEncoder().matches(rawPassword, user.getPassword())) {
 			FlowTrace.log(UserService.class, "authenticate outcome: BCrypt verified the password for '" + user.getUsername() + "' - returning the user");
 			return user;
@@ -101,6 +111,12 @@ public class UserService {
 			}
 		}
 		if(form.getConfirmPassword().trim().isEmpty() == false) {
+			// Same 72-byte maximum as authenticate, per CVE-2025-22228: neither the old
+			// password (BCrypt matches) nor the new one (BCrypt encode) may exceed the limit,
+			// or BCrypt silently truncates it. https://avd.aquasec.com/nvd/cve-2025-22228
+			if(exceedsBCrypt72ByteLimit(form.getOldPassword()) || exceedsBCrypt72ByteLimit(form.getNewPassword())) {
+				return ProfileUpdateOutcome.INVALID_ENTRIES;
+			}
 			if(form.getOldPassword() != null && new BCryptPasswordEncoder().matches(form.getOldPassword(), user.getPassword())) {
 				user.setPassword(new BCryptPasswordEncoder().encode(form.getNewPassword()));
 			} else {
@@ -129,6 +145,13 @@ public class UserService {
 		}
 		this.userRepository.updateEmployee(user);
 		return ProfileUpdateOutcome.UPDATED;
+	}
+
+	// BCrypt's algorithm reads at most 72 bytes; spring-security-crypto truncates anything
+	// beyond that without error (CVE-2025-22228). Byte length, not char length: multi-byte
+	// UTF-8 characters hit the limit sooner than String.length() suggests.
+	private static boolean exceedsBCrypt72ByteLimit(String password) {
+		return password != null && password.getBytes(StandardCharsets.UTF_8).length > 72;
 	}
 
 }

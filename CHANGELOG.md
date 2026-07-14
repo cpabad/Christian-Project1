@@ -223,6 +223,56 @@ The four `christian/frontend-facelift` commits (login, employee, supervisor page
   ordinary dead code - a cold reader (or interviewer) reconstructs the wrong system from it.
   The tell was archaeological: three generations of login code, only one reachable.
 
+## 2026-07 - CVE remediation & observability pass
+
+### Pipeline - the SCA scan that had never run
+- **Symptom.** The microservice's Jenkins scans surfaced a large CVE backlog; the monolith's
+  pipeline showed nothing comparable. Not because the monolith was clean - its Trivy stage had
+  **never successfully run**: build 1 hit a Maven-Central 429 rate-limit FATAL while resolving
+  pom versions, and the warn-mode `catchError` wrapper turned the scanner *crash* into the same
+  UNSTABLE yellow a real finding produces. A scanner-health failure was indistinguishable from
+  a triaged warning.
+- **Resolution.** Ported the microservice's offline-resolution fix (`HOME=$WORKSPACE`, Maven
+  cache at `.m2/repository`, so Trivy resolves every version from the local repo and never
+  calls Maven Central), passed `.trivyignore` explicitly (`--ignorefile`), and **deleted the
+  `catchError` - SCA is now a hard gate**: findings and scanner crashes are both red.
+- **Takeaway.** "The scan is green" and "the scan ran" are separate claims; warn-mode must
+  never absorb the second one.
+
+### Dependencies - 36 HIGH/CRITICAL findings to zero
+- **Validated locally** (offline Trivy over the same rule set as CI): 36 HIGH/CRITICAL across
+  12 packages. Cleared by shape, not just version bumps:
+  - `tomcat-catalina` (16 findings) **removed** - zero catalina/coyote imports in the code;
+    the WAR runs inside a real Tomcat 9 which provides those classes. The biggest single fix
+    was deleting an unused dependency.
+  - `aws-java-sdk` (full bundle, 1.11.327) **narrowed** to `aws-java-sdk-s3` 1.12.797 - the
+    code only ever used S3; the narrowing kills the transitive netty and ion-java CVE families
+    outright.
+  - `postgresql` 42.2.27 -> 42.7.11, `jackson-databind` 2.12.7.1 -> 2.18.8 (Java 8 baseline
+    retained).
+  - `spring-security-crypto` 5.8.5 -> 5.8.16 for **CVE-2025-22228** (BCrypt trusts only the
+    first 72 bytes of input). Trivy advertises 5.8.18 as the fix, but that release is
+    commercial-only (Tanzu); 5.8.16 is the latest OSS artifact and still flagged, so the real
+    mitigation is in code: `UserService` now rejects passwords over 72 UTF-8 bytes before
+    BCrypt sees them (guards in `authenticate` and `updateProfile`, four boundary tests - two
+    different 80-byte passwords sharing a 72-byte prefix must not both verify).
+  - `hibernate-core` 5.4.33 stays: CVE-2026-0603 has no fixed 5.x, 6.x requires Java 17, and
+    the vulnerable bulk-id class is unreachable here. Both acceptances live in
+    `ReimbursementManagement/.trivyignore` with written rationale and revisit conditions.
+- **Convention (owner-ruled).** Every CVE-motivated edit carries an inline comment at the edit
+  site naming the CVE and linking the advisory - never prepended above existing headers.
+
+### Observability - /health and a monitor that shares no fate
+- **`/health` endpoint** (`HealthServlet`): 200 `{"status":"UP"}` when a raw-JDBC `SELECT 1`
+  succeeds, 503 `{"status":"DOWN"}` otherwise. Raw JDBC on purpose - the endpoint must still
+  answer when Hibernate cannot boot. Unauthenticated by design (the contract Kubernetes
+  probes, ECS health checks, and Route 53 checks all assume); `SessionFilter` exempts it from
+  the login forward so a monitor never reads the login page as a false 200. Suite 129 -> 132.
+- **`monitoring/`**: Uptime Kuma via host-level Docker Compose - deliberately not in Tomcat,
+  not a Jenkins job, not in K3s: a monitor must never share fate with what it monitors.
+  Runs `network_mode: host` (verified necessary: ufw on this box drops all docker
+  bridge-to-host traffic) with the dashboard bound loopback-only at `127.0.0.1:3001`.
+
 ## Planned / not yet done
 - **Optional: git history scrub.** The exposed AWS key pair was revoked and all EC2 instances terminated (2026-07-06), so the credential is dead; scrubbing `s3.properties` from git history with `git-filter-repo` (as was done for P3) remains available as pure tidiness.
 - **Microservice refactor (Phase 4) — extracted to its own repo.** The capstone began here in the `ers-service/` module (Spring Boot 3 scaffold → a Role tracer → the Request slice; the branch `christian/microservice` is frozen at that point) and then **moved to a dedicated repository**: [cpabad/Revature931-Project1-Microservice](https://github.com/cpabad/Revature931-Project1-Microservice), where the self-issued-JWT auth slice and the approval-chain slice are done. This repo stays the home of the monolith and the record of its Java 8 refresh; the 2026-07 service extractions make the remaining decomposition mostly mechanical, since the cascades now live in services that port to Spring beans directly.

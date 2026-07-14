@@ -1,0 +1,23 @@
+# Accepted-risk CVEs — every entry needs a justification, an advisory link, and a revisit
+# condition. This file is what lets the SCA stage run as a HARD GATE without going permanently
+# red on findings that have no fix we can take. Passed to Trivy explicitly via --ignorefile
+# (Jenkinsfile SCA stage and the local rescan command in STARTUP.md).
+
+# hibernate-core 5.4.33.Final — second-order SQL injection in InlineIdsOrClauseBuilder.
+# https://avd.aquasec.com/nvd/cve-2026-0603
+# No fixed 5.x release exists; the fix line is Hibernate 6.x, which requires Java 17 — this
+# project is pinned to Java 8 (maven.compiler 1.8). The vulnerable class is a multi-table
+# bulk-id helper used only for bulk UPDATE/DELETE over inheritance hierarchies; this app has
+# no entity inheritance and issues no bulk HQL mutations, so the code path is unreachable.
+# Revisit: if the project ever moves off the Java 8 pin, bump to Hibernate 6.x and delete this.
+CVE-2026-0603
+
+# spring-security-crypto 5.8.16 — BCryptPasswordEncoder.matches() returns true for any
+# >72-byte password whose first 72 bytes match (BCrypt silently truncates its input).
+# https://avd.aquasec.com/nvd/cve-2025-22228
+# Trivy's listed fix for the 5.x line (5.8.18) is a commercial-only Tanzu release; 5.8.16 is
+# the latest OSS 5.8.x on Maven Central, and the 6.x fix line requires Java 17 (this project
+# is pinned to Java 8). Mitigated in code instead: UserService rejects passwords longer than
+# 72 UTF-8 bytes BEFORE they reach BCrypt (authenticate and updateProfile), so the truncation
+# path is unreachable. Revisit: off the Java 8 pin, bump to Spring Security 6.4.4+ and delete.
+CVE-2025-22228
