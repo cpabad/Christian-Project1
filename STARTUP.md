@@ -129,7 +129,7 @@ If you are re-running and the schema already exists, drop it first, then repeat 
 PGPASSWORD=ers psql -h localhost -U ers -d ers -c 'DROP SCHEMA "ExpenseReimbursementManagementSystem" CASCADE;'
 ```
 
-> **✓ Success check.** The load prints a stream of `CREATE TABLE` / `INSERT 0 1` lines and no
+> **Success check.** The load prints a stream of `CREATE TABLE` / `INSERT 0 1` lines and no
 > `ERROR:`. Confirm the seed landed:
 > ```
 > PGPASSWORD=ers psql -h localhost -U ers -d ers -tAc 'SELECT count(*) FROM "ExpenseReimbursementManagementSystem".users;'
@@ -162,7 +162,7 @@ without running the tests, add `-DskipTests`.
 (Maven picks its JVM from `JAVA_HOME`; confirm with `mvn -version` if the build complains about
 the Java version.)
 
-> **✓ Success check.** The **first** build is slow - Maven downloads every dependency to `~/.m2`
+> **Success check.** The **first** build is slow - Maven downloads every dependency to `~/.m2`
 > (a minute or more; it is not hung). A successful build ends with `BUILD SUCCESS`, a
 > `Tests run: 125, Failures: 0, Errors: 0` line, and the WAR file existing:
 > ```
@@ -207,7 +207,7 @@ Open in your browser:
 http://localhost:8080/ReimbursementManagement/
 ```
 
-> **✓ Success check.** In the terminal running Tomcat you should see a line like
+> **Success check.** In the terminal running Tomcat you should see a line like
 > `Server startup in [1234] milliseconds` and (because FLOW ships on) `FLOW [....|1] SessionFilter
 > -> GET ... received` when you load the page. The browser shows the login page. If the page is a
 > Tomcat 404, the WAR was not deployed under the name `ReimbursementManagement.war` - re-check the
@@ -229,7 +229,7 @@ Employees. The employee screens only work for an account whose role is Employee.
 > a Supervisor in the seed, but its stored bcrypt hash is **not** `employeePassword` (login
 > returns 400/401) - use `employee1` for the supervisor flow.
 
-> **✓ Success check.** A correct login lands you on the employee home page (or a "Welcome"
+> **Success check.** A correct login lands you on the employee home page (or a "Welcome"
 > response), and the Tomcat FLOW trace shows `... login decision: SUCCESS ... creating the
 > session`. "Invalid Credentials" (400) means wrong username/password for the role - use exactly
 > `employee2` / `employeePassword`. "You already have a current session" means you are still
@@ -493,15 +493,22 @@ No local toolchain is needed for CI: the pipeline builds in a `maven:3.8-openjdk
 build using the same `ers_script.sql` recipe as Step 1 above. Your Step-1 database is never
 touched by CI.
 
-### Reading the weather
+### Reading build results
 
-Jenkins summarizes each job's recent health as a weather icon — **sunshine** means the last
-several builds all passed. The pipeline's scan policy is *warn-then-ratchet*: dependency and
-static-analysis findings first mark a build **UNSTABLE** (yellow — visible, not fatal) so the
-initial backlog can be triaged; after triage, the `catchError` wrappers in the Jenkinsfile get
-deleted and those scans become hard gates. A secret in the working tree is **red** from day
-one. The result reads at a glance: sunshine = ship-shape, yellow = a scan wants triage,
-red = fix before anything else.
+A build ends in one of three states, and each means something specific here:
+
+- **SUCCESS (blue/green)** — the build, all 125 tests, and every scan passed. No action.
+- **UNSTABLE (yellow)** — the build and tests passed but a security scan reported findings.
+  This is the *warn-then-ratchet* policy: dependency (SCA) and static-analysis (SAST) findings
+  first mark the build UNSTABLE — visible, never ignored, but not fatal — so the initial
+  backlog can be triaged; after triage, the `catchError` wrappers in the Jenkinsfile get
+  deleted and those scans become hard failures.
+- **FAILURE (red)** — compilation broke, a test failed, or a secret was found in the working
+  tree (the secrets scan fails hard from day one — a credential is never just a warning).
+  Fix before anything else; the Discord notification names the commit author.
+
+Jenkins also shows a per-job stability indicator that summarizes the last several builds, so
+a trend of intermittent failures is visible even when the latest build passed.
 
 ### Can this thing be used to break into my machine?
 

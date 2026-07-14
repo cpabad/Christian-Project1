@@ -4,8 +4,8 @@
  * What Jenkins is here: the team you don't have. On every push (SCM poll, ~2 min) it builds
  * from a FRESH clone in CLEAN containers, runs all 125 tests against a THROWAWAY seeded
  * database, and runs three security scans — so "green" means "a neutral witness rebuilt and
- * re-verified everything from scratch", not "it worked on my machine". The weather icon on
- * the job (sunshine = recent builds stable) is the health summary.
+ * re-verified everything from scratch", not "it worked on my machine". The job's
+ * build-stability indicator summarizes recent health at a glance.
  *
  * Scan policy (owner-ruled 2026-07-13): WARN-THEN-RATCHET. SCA and SAST findings mark the
  * build UNSTABLE (yellow) — visible, never ignored, but not red — until the initial backlog
@@ -197,13 +197,13 @@ EOF
 
   post {
     failure {
-      script { notifyDiscord("🔴 **${env.JOB_NAME} #${env.BUILD_NUMBER} FAILED** on `${env.GIT_BRANCH ?: 'main'}` — blame: ${blame()} — ${env.BUILD_URL}") }
+      script { notifyDiscord("FAILURE: **${env.JOB_NAME} #${env.BUILD_NUMBER}** failed on `${env.GIT_BRANCH ?: 'main'}` — author: ${blame()} — ${env.BUILD_URL}") }
     }
     unstable {
-      script { notifyDiscord("⚠️ **${env.JOB_NAME} #${env.BUILD_NUMBER} UNSTABLE** — a security scan has findings (warn-mode) — ${env.BUILD_URL}") }
+      script { notifyDiscord("WARNING: **${env.JOB_NAME} #${env.BUILD_NUMBER}** is UNSTABLE — a security scan reported findings (warn-mode) — ${env.BUILD_URL}") }
     }
     fixed {
-      script { notifyDiscord("☀️ **${env.JOB_NAME} #${env.BUILD_NUMBER} back to sunshine** — ${env.BUILD_URL}") }
+      script { notifyDiscord("RECOVERED: **${env.JOB_NAME} #${env.BUILD_NUMBER}** is passing again — ${env.BUILD_URL}") }
     }
   }
 }

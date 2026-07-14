@@ -19,6 +19,8 @@ A reimbursement system for a company's employees. Employees can request reimburs
 * HTML
 * CSS
 * JavaScript
+* Jenkins (containerized CI: build, tests against a disposable database, Trivy SCA,
+  Semgrep SAST, gitleaks secrets scan - see `JENKINS.md`)
 
 ## Features
 
@@ -68,6 +70,9 @@ Prerequisites: Java 8 (JDK 1.8), Maven, PostgreSQL, and a servlet container (Tom
   request trace, pitfalls, and troubleshooting.
 * `WALKTHROUGH.md` - one request (the employee login) narrated end-to-end through every
   class, keyed to a real captured FLOW trace.
+* `JENKINS.md` - the CI pipeline: what each stage verifies, result semantics
+  (SUCCESS/UNSTABLE/FAILURE), the warn-then-ratchet scan policy, and where the shared
+  Jenkins controller lives.
 * `CHANGELOG.md` - the 2026 refresh (build fix, test coverage, security hardening) with the
   root cause and fix for each change.
 * `COVERAGE.md` - how the service-layer test coverage (99.46%, enforced at >= 98%) is
