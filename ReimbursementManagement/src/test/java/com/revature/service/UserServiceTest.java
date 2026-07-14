@@ -1,5 +1,7 @@
 package com.revature.service;
 
+import java.util.Arrays;
+
 import javax.persistence.NoResultException;
 
 import org.hibernate.NonUniqueObjectException;
@@ -120,6 +122,32 @@ public class UserServiceTest {
 		Assert.assertNull(userService.authenticate("major", "   "));
 	}
 
+	private static String repeat(char c, int count) {
+		char[] chars = new char[count];
+		Arrays.fill(chars, c);
+		return new String(chars);
+	}
+
+	@Test
+	public void testAuthenticateExactly72BytePasswordStillWorks() {
+		// boundary pin for the CVE-2025-22228 guard: 72 bytes is BCrypt's limit, not over it
+		String pw = repeat('a', 72);
+		User user = userWithPassword(pw);
+		Mockito.when(userRepository.findByUsername("major")).thenReturn(user);
+		Assert.assertSame(user, userService.authenticate("major", pw));
+	}
+
+	@Test
+	public void testAuthenticateOver72BytePasswordRejected() {
+		// CVE-2025-22228 pin: BCrypt reads only the first 72 bytes, so WITHOUT the guard
+		// these two DIFFERENT 80-byte passwords (identical first 72 bytes) would verify as
+		// equal. The guard must fail the attempt before BCrypt can be fooled.
+		String stored = repeat('a', 72) + "SUFFIX-1";
+		String attempt = repeat('a', 72) + "SUFFIX-2";
+		Mockito.when(userRepository.findByUsername("major")).thenReturn(userWithPassword(stored));
+		Assert.assertNull(userService.authenticate("major", attempt));
+	}
+
 	// --- updateProfile ---
 
 	private static ProfileUpdateForm usernameForm(String oldUsername, String newUsername) {
@@ -201,6 +229,29 @@ public class UserServiceTest {
 		Mockito.when(userRepository.findById(1)).thenReturn(userWithPassword("oldpw"));
 
 		ProfileUpdateOutcome outcome = userService.updateProfile(1, passwordForm("wrong", "newpw"));
+
+		Assert.assertEquals(ProfileUpdateOutcome.INVALID_ENTRIES, outcome);
+		Mockito.verify(userRepository, Mockito.never()).updateEmployee(Mockito.any(User.class));
+	}
+
+	@Test
+	public void testUpdateProfileOver72ByteNewPasswordRejected() {
+		// CVE-2025-22228 guard: an oversized NEW password would be silently truncated by
+		// BCrypt encode - reject the change instead of storing a hash of 72 bytes of it
+		Mockito.when(userRepository.findById(1)).thenReturn(userWithPassword("oldpw"));
+
+		ProfileUpdateOutcome outcome = userService.updateProfile(1, passwordForm("oldpw", repeat('b', 73)));
+
+		Assert.assertEquals(ProfileUpdateOutcome.INVALID_ENTRIES, outcome);
+		Mockito.verify(userRepository, Mockito.never()).updateEmployee(Mockito.any(User.class));
+	}
+
+	@Test
+	public void testUpdateProfileOver72ByteOldPasswordRejected() {
+		// CVE-2025-22228 guard on the OLD password too: it feeds BCrypt matches()
+		Mockito.when(userRepository.findById(1)).thenReturn(userWithPassword("oldpw"));
+
+		ProfileUpdateOutcome outcome = userService.updateProfile(1, passwordForm(repeat('b', 73), "newpw"));
 
 		Assert.assertEquals(ProfileUpdateOutcome.INVALID_ENTRIES, outcome);
 		Mockito.verify(userRepository, Mockito.never()).updateEmployee(Mockito.any(User.class));

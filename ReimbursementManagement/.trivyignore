@@ -11,3 +11,13 @@
 # no entity inheritance and issues no bulk HQL mutations, so the code path is unreachable.
 # Revisit: if the project ever moves off the Java 8 pin, bump to Hibernate 6.x and delete this.
 CVE-2026-0603
+
+# spring-security-crypto 5.8.16 — BCryptPasswordEncoder.matches() returns true for any
+# >72-byte password whose first 72 bytes match (BCrypt silently truncates its input).
+# https://avd.aquasec.com/nvd/cve-2025-22228
+# Trivy's listed fix for the 5.x line (5.8.18) is a commercial-only Tanzu release; 5.8.16 is
+# the latest OSS 5.8.x on Maven Central, and the 6.x fix line requires Java 17 (this project
+# is pinned to Java 8). Mitigated in code instead: UserService rejects passwords longer than
+# 72 UTF-8 bytes BEFORE they reach BCrypt (authenticate and updateProfile), so the truncation
+# path is unreachable. Revisit: off the Java 8 pin, bump to Spring Security 6.4.4+ and delete.
+CVE-2025-22228

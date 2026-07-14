@@ -12,10 +12,14 @@
 	</properties>
 	<dependencies>
 		<!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
+		<!-- 42.2.27 -> 42.7.11 per CVE-2024-1597 (CRITICAL, SQL injection via line comment
+		     nesting in simple-query mode) and CVE-2026-42198.
+		     https://avd.aquasec.com/nvd/cve-2024-1597
+		     https://avd.aquasec.com/nvd/cve-2026-42198 -->
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
-			<version>42.2.27</version>
+			<version>42.7.11</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
 		<dependency>
@@ -45,12 +49,20 @@
 			<scope>provided</scope>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+		<!-- 2.12.7.1 -> 2.18.8 per CVE-2026-54512 / CVE-2026-54513 (databind) and
+		     CVE-2025-52999 (transitive jackson-core deep-nesting StackOverflowError).
+		     Jackson 2.x keeps the Java 8 baseline, so the JDK-8 pin holds.
+		     https://avd.aquasec.com/nvd/cve-2026-54512
+		     https://avd.aquasec.com/nvd/cve-2026-54513
+		     https://avd.aquasec.com/nvd/cve-2025-52999 -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.12.7.1</version>
+			<version>2.18.8</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.hibernate/hibernate-core -->
+		<!-- Stays 5.4.33.Final: CVE-2026-0603 has no fixed 5.x release and 6.x needs Java 17.
+		     Accepted risk - justification and revisit condition live in .trivyignore. -->
 		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-core</artifactId>
@@ -63,23 +75,33 @@
 			<version>5.4.33.Final</version>
 		</dependency>
 		
+		<!-- Narrowed from the full aws-java-sdk 1.11.327 bundle to the one module the code
+		     uses (UploadFile.java imports only S3 + core classes, which ride in transitively).
+		     The bundle dragged in vulnerable transitives: netty 4.1.17 (CVE-2019-20444
+		     CRITICAL + 9 HIGH) and ion-java 1.0.2 (CVE-2024-21634); the s3 module itself
+		     needed 1.12.261+ for CVE-2022-31159 (partial-path traversal in TransferManager).
+		     Phase 9 (MinIO) revives this code path - keep the dep compiling until then.
+		     https://avd.aquasec.com/nvd/cve-2022-31159
+		     https://avd.aquasec.com/nvd/cve-2019-20444
+		     https://avd.aquasec.com/nvd/cve-2024-21634 -->
 		<dependency>
 			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk</artifactId>
-			<version>1.11.327</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>org.apache.tomcat</groupId>
-			<artifactId>tomcat-catalina</artifactId>
-			<version>8.5.100</version>
+			<artifactId>aws-java-sdk-s3</artifactId>
+			<version>1.12.797</version>
 		</dependency>
 
 		<!-- BCryptPasswordEncoder for password hashing; Spring Security 5.x is Java 8 compatible (6.x needs Java 17) -->
+		<!-- 5.8.5 -> 5.8.16 per CVE-2025-22228 (BCryptPasswordEncoder.matches() returns true
+		     for any >72-byte password whose first 72 bytes match - BCrypt silently truncates).
+		     NOTE: Trivy's listed fix (5.8.18) is a commercial-only Tanzu release; 5.8.16 is the
+		     latest OSS 5.8.x on Maven Central and still carries the flag. The real mitigation
+		     is the explicit 72-byte guard in UserService (see authenticate/updateProfile);
+		     the residual finding is accepted in .trivyignore with this rationale.
+		     https://avd.aquasec.com/nvd/cve-2025-22228 -->
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-crypto</artifactId>
-			<version>5.8.5</version>
+			<version>5.8.16</version>
 		</dependency>
 
 	</dependencies>
