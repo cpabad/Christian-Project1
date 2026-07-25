@@ -374,6 +374,35 @@ The four `christian/frontend-facelift` commits (login, employee, supervisor page
   make the red go away is not a third option; it is how the earlier 429 crash stayed hidden
   for a full build cycle.
 
+### CI - the SCA scan was never actually offline, and Maven Central decided when CI passed
+- **Symptom.** The next build died in **SCA** with
+  `FATAL remote Maven repository returned 429 Too Many Requests for .../javax/activation/activation/1.1/activation-1.1.pom`.
+  The same 429 had killed build 1 months earlier; the fix applied then (`HOME=$WORKSPACE`, so
+  Trivy reads the Maven cache the Build stage populates) was believed to have made resolution
+  offline. It had not.
+- **Root cause.** Trivy walks the POM tree **literally**, including nodes Maven's nearest-wins
+  *mediation* discarded. `jaxb-runtime:2.3.1` declares `javax.activation:activation:1.1`, but
+  Maven resolves `javax.activation-api:1.2.0` in its place and therefore never downloads
+  `activation-1.1.pom`. No Maven command can put it in the cache - not `dependency:resolve`,
+  not `dependency:go-offline`, not a full `package` (all three were tried). So every build
+  reached out to Maven Central for that one file, and the scan succeeded or failed according
+  to whether Central felt like answering. The intervening green build had passed on luck.
+- **Resolution.** Added `--offline-scan`, which stops Trivy issuing resolution requests
+  entirely. Verified lossless before adopting: against a cache with `activation-1.1.pom`
+  deleted, `--offline-scan` reported an **identical 41-package set** to a complete-cache online
+  scan - the skipped node is one Maven never resolves, so it was never a real dependency. Also
+  verified it still bites: re-tested against pgjdbc 42.7.11 it correctly exited 1 on
+  CVE-2026-54291. Because `--offline-scan` is only *complete* while the Build stage's cache
+  exists - an empty cache would resolve nothing and report a cheerful zero - the stage now
+  asserts that precondition first and aborts if the cache holds fewer than 50 POMs (437 is
+  normal).
+- **Takeaway.** "The scanner ran" and "the scanner could see everything" are yet another pair
+  of claims that look identical in a green log. The first fix removed the *catchError* that
+  hid the crash, which made the problem visible; it did not remove the *network dependency*
+  that caused it. Worth noticing the shape: every fix in this pipeline's history has been about
+  making a silent condition loud, and the guard added here exists because `--offline-scan`
+  introduces a new way to be silently wrong.
+
 ## Planned / not yet done
 - **Optional: git history scrub.** The exposed AWS key pair was revoked and all EC2 instances terminated (2026-07-06), so the credential is dead; scrubbing `s3.properties` from git history with `git-filter-repo` (as was done for P3) remains available as pure tidiness.
 - **Microservice refactor (Phase 4) — extracted to its own repo.** The capstone began here in the `ers-service/` module (Spring Boot 3 scaffold → a Role tracer → the Request slice; the branch `christian/microservice` is frozen at that point) and then **moved to a dedicated repository**: [cpabad/Revature931-Project1-Microservice](https://github.com/cpabad/Revature931-Project1-Microservice), where the self-issued-JWT auth slice and the approval-chain slice are done. This repo stays the home of the monolith and the record of its Java 8 refresh; the 2026-07 service extractions make the remaining decomposition mostly mechanical, since the cascades now live in services that port to Spring beans directly.

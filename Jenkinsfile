@@ -160,12 +160,39 @@ pipeline {
           // friction is the enemy in this shop). Cache in the workspace: jenkins-uid writable.
           // HOME=$WORKSPACE: to report a CVE Trivy must first RESOLVE each pom's versions,
           // which means reading ~/.m2/repository — the cache the Build stage already populated.
-          // Without it Trivy hits Maven Central and gets 429-throttled into a FATAL (exactly
-          // what build 1 hid behind the old catchError). HARD GATE — no catchError: findings
-          // are red, and so is a scanner crash. Accepted-risk CVEs live in the tracked
-          // .trivyignore (each entry carries its justification).
+          // HARD GATE — no catchError: findings are red, and so is a scanner crash.
+          // Accepted-risk CVEs live in the tracked .trivyignore (each carries its justification).
+          //
+          // --offline-scan (added 2026-07-25, builds 1/6): HOME=$WORKSPACE alone does NOT make
+          // resolution offline, which took two red builds to learn. Trivy walks the pom tree
+          // LITERALLY, including nodes Maven's nearest-wins mediation discarded. Here
+          // jaxb-runtime declares javax.activation:activation:1.1, but Maven resolves
+          // javax.activation-api:1.2.0 instead and therefore NEVER downloads activation-1.1.pom
+          // — no Maven command can put it in the cache. So Trivy reached out to Maven Central
+          // for that one pom on every build and died FATAL whenever Central 429-throttled us.
+          // Build 5 passed on luck, not on correctness.
+          //
+          // Verified lossless before adopting: against a cache with activation-1.1.pom deleted,
+          // --offline-scan reported an IDENTICAL 41-package set to a complete-cache online scan
+          // (the skipped node is one Maven never resolves, so it is not a real dependency), and
+          // it still exits 1 on a genuine finding — re-tested against pgjdbc 42.7.11, which it
+          // correctly flagged for CVE-2026-54291. A gate that cannot bite would be worse than
+          // the crash it replaced.
           docker.image('aquasec/trivy:latest').inside("--entrypoint='' -e HOME=$WORKSPACE -e TRIVY_CACHE_DIR=$WORKSPACE/.trivy-cache") {
-            sh 'trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --no-progress --ignorefile ReimbursementManagement/.trivyignore ReimbursementManagement'
+            // --offline-scan is only COMPLETE while the Build stage's Maven cache is present:
+            // with an empty cache Trivy would resolve almost nothing and report a cheerful zero.
+            // That is the failure mode this repo cares most about (see the build-1 lesson in the
+            // header), so the precondition is asserted rather than assumed. 437 poms is normal.
+            sh '''
+              POMS=$(find .m2/repository -name '*.pom' 2>/dev/null | wc -l)
+              echo "Maven cache holds ${POMS} poms for offline resolution"
+              if [ "$POMS" -lt 50 ]; then
+                echo "SCA ABORTED - Maven cache missing or too small (${POMS} poms)."
+                echo "Scanning now would silently under-report instead of failing. Check the Build stage."
+                exit 1
+              fi
+              trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --no-progress --offline-scan --ignorefile ReimbursementManagement/.trivyignore ReimbursementManagement
+            '''
           }
         }
       }
