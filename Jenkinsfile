@@ -221,7 +221,25 @@ EOF
       // LAST stage on purpose: every gate above (tests, SCA, SAST, secrets) must be green
       // before anything reaches a running environment. `main` only — a feature branch that
       // builds green still does not get to replace the dev app.
-      when { branch 'main' }
+      //
+      // The obvious spelling of that rule, `when { branch 'main' }`, is a TRAP here: it reads
+      // env.BRANCH_NAME, which only a Multibranch Pipeline sets. This is a plain Pipeline job
+      // (flow-definition), so BRANCH_NAME is null, the condition is silently false, and the
+      // deploy would never run — no error, no warning, just a permanently skipped stage.
+      // The `branch` form is kept for the day this becomes multibranch; the expression is what
+      // actually fires today. It asks git rather than trusting an env var: the job's SCM config
+      // does restrict this job to */main, but that guard lives outside this file and would
+      // vanish silently if the job were ever repointed.
+      when {
+        anyOf {
+          branch 'main'
+          expression {
+            def head = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
+            def main = sh(returnStdout: true, script: 'git rev-parse --verify -q origin/main || echo none').trim()
+            return head == main
+          }
+        }
+      }
       steps {
         script {
           withCredentials([string(credentialsId: 'ers-dburl',      variable: 'DBURL'),
