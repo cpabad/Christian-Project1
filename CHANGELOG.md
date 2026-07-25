@@ -354,6 +354,26 @@ The four `christian/frontend-facelift` commits (login, employee, supervisor page
   `/health` endpoint Kuma polls, so CI and the monitor agree by construction rather than by
   coincidence.
 
+### Security - a new advisory turned the hard gate red with no code change (CVE-2026-54291)
+- **Symptom.** The first build after the CD merge went red in the **SCA** stage on a single
+  HIGH finding: `org.postgresql:postgresql 42.7.11`, CVE-2026-54291, fixed in 42.7.12. Build
+  and tests had passed 132/132; SAST, Secrets and Deploy were all skipped behind the failure.
+- **Root cause.** Nothing regressed. 42.7.11 was the *fix* applied on 2026-07-14 and scanned
+  clean then; this advisory was published afterward. The vulnerability is a MITM-protection
+  bypass - the bundled `scram-client` can be downgraded from `SCRAM-SHA-256-PLUS`, dropping
+  channel binding.
+- **Resolution.** Bumped to **42.7.13** (the latest 42.7.x patch rather than the advisory's
+  minimum 42.7.12, same policy as the microservice BOM bump), with the CVE and advisory link
+  commented at the edit site. Verified: full suite 132/132 with the coverage gate passing
+  against a freshly seeded database, and a fresh-DB offline Trivy rescan reporting **0**
+  HIGH/CRITICAL.
+- **Takeaway.** An SCA gate has a *moving input* - the vulnerability database - so a scan can
+  be green today and red tomorrow against byte-identical code. That is the gate working, and
+  it is the operational cost of a hard gate: the only two legitimate responses are to bump or
+  to record a justified `.trivyignore` acceptance. Re-wrapping the scanner in `catchError` to
+  make the red go away is not a third option; it is how the earlier 429 crash stayed hidden
+  for a full build cycle.
+
 ## Planned / not yet done
 - **Optional: git history scrub.** The exposed AWS key pair was revoked and all EC2 instances terminated (2026-07-06), so the credential is dead; scrubbing `s3.properties` from git history with `git-filter-repo` (as was done for P3) remains available as pure tidiness.
 - **Microservice refactor (Phase 4) — extracted to its own repo.** The capstone began here in the `ers-service/` module (Spring Boot 3 scaffold → a Role tracer → the Request slice; the branch `christian/microservice` is frozen at that point) and then **moved to a dedicated repository**: [cpabad/Revature931-Project1-Microservice](https://github.com/cpabad/Revature931-Project1-Microservice), where the self-issued-JWT auth slice and the approval-chain slice are done. This repo stays the home of the monolith and the record of its Java 8 refresh; the 2026-07 service extractions make the remaining decomposition mostly mechanical, since the cascades now live in services that port to Spring beans directly.

@@ -16,10 +16,17 @@
 		     nesting in simple-query mode) and CVE-2026-42198.
 		     https://avd.aquasec.com/nvd/cve-2024-1597
 		     https://avd.aquasec.com/nvd/cve-2026-42198 -->
+		<!-- 42.7.11 -> 42.7.13 per CVE-2026-54291 (HIGH, MITM protection bypass: the bundled
+		     scram-client can be downgraded from SCRAM-SHA-256-PLUS, dropping channel binding).
+		     Advisory names 42.7.12 as the fix; taking the latest 42.7.x patch instead, same
+		     policy as the microservice's BOM bump. Nothing here regressed - this advisory was
+		     published after the 2026-07-14 pass, and the hard SCA gate turned it red on the
+		     next build. That is the gate working, not a false alarm.
+		     https://avd.aquasec.com/nvd/cve-2026-54291 -->
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
-			<version>42.7.11</version>
+			<version>42.7.13</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
 		<dependency>
