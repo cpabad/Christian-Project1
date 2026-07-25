@@ -282,9 +282,17 @@ EOF
             // "green build, dead app" is precisely the condition this phase exists to kill,
             // and standing policy here is that silence is never success. Polls the same
             // /health endpoint Kuma watches, so CI and the monitor agree by construction.
+            //
+            // The probe runs via `docker exec` INSIDE the app container, not from this one.
+            // Two reasons, both load-bearing: THIS container's localhost:8080 is Jenkins' own
+            // web UI (it answers 403 and would never contain "UP"), and ufw blocks the bridge
+            // network from reaching the host, so no address reachable from here resolves to
+            // the deployed app at all. The app container runs on host networking, so its
+            // 127.0.0.1:8080 is the real thing. If it has crashed, `docker exec` simply fails
+            // and the loop falls through to the failure path -- which is the correct verdict.
             sh '''
               for i in $(seq 1 30); do
-                if curl -fsS http://localhost:8080/ReimbursementManagement/health 2>/dev/null | grep -q UP; then
+                if docker exec ers-monolith-dev curl -fsS http://127.0.0.1:8080/ReimbursementManagement/health 2>/dev/null | grep -q UP; then
                   echo "DEPLOY OK - /health returned UP after ${i} attempt(s)"
                   exit 0
                 fi
