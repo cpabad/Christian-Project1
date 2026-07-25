@@ -1,0 +1,9 @@
+# The build context is streamed to the Docker daemon on every build, and this image needs
+# exactly one file out of the whole module: the packaged WAR. Without this, each deploy
+# would ship src/, the exploded target/ReimbursementManagement-<version>/ directory, and
+# the surefire/jacoco reports across the socket for nothing.
+#
+# Docker (unlike git) evaluates every pattern against each path and takes the LAST match,
+# so re-including a file inside an excluded directory works as written here.
+*
+!target/ReimbursementManagement-*.war

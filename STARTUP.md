@@ -512,14 +512,14 @@ touched by CI.
 A build ends in one of three states, and each means something specific here:
 
 - **SUCCESS (blue/green)** — the build, the full test suite, and every scan passed. No action.
-- **UNSTABLE (yellow)** — the build and tests passed but a security scan reported findings.
-  This is the *warn-then-ratchet* policy: dependency (SCA) and static-analysis (SAST) findings
-  first mark the build UNSTABLE — visible, never ignored, but not fatal — so the initial
-  backlog can be triaged; after triage, the `catchError` wrappers in the Jenkinsfile get
-  deleted and those scans become hard failures.
-- **FAILURE (red)** — compilation broke, a test failed, or a secret was found in the working
-  tree (the secrets scan fails hard from day one — a credential is never just a warning).
-  Fix before anything else; the Discord notification names the commit author.
+- **UNSTABLE (yellow)** — the build and tests passed but the SAST scan reported findings. This
+  is the *warn-then-ratchet* policy: a scan starts as UNSTABLE — visible, never ignored, but
+  not fatal — so the initial backlog can be triaged; after triage its `catchError` wrapper is
+  deleted and it becomes a hard failure. SCA finished that ratchet on 2026-07-14 (its 36-CVE
+  backlog was cleared), so **only SAST is still in warn-mode**.
+- **FAILURE (red)** — compilation broke, a test failed, a dependency CVE or a secret was found,
+  or the deploy did not come up. Fix before anything else; the Discord notification names the
+  commit author.
 
 Jenkins also shows a per-job stability indicator that summarizes the last several builds, so
 a trend of intermittent failures is visible even when the latest build passed.
@@ -533,6 +533,58 @@ network can reach this Jenkins at all. The one honest caveat: the container moun
 socket (that's how it runs build containers), which is root-equivalent *on this host* — which
 is exactly why the loopback bind and pull-only triggers are non-negotiable, and why the admin
 password should be a real one even though it's "just local".
+
+### Continuous deployment — the build updates the running dev app
+
+Steps 1-5 above are the **manual** path, and they still work exactly as written; nothing about
+the app requires Docker or Jenkins. But a green build that changes nothing you can visit is
+only half a pipeline. On `main`, after every gate passes, Jenkins' final stage builds
+`ReimbursementManagement/Dockerfile` into an image, replaces the running dev container with
+it, and then polls `/health` until the app answers `UP` — a deploy that does not come up is a
+**failed build**, not a quiet one.
+
+The container is started with two flags that carry the whole design:
+
+- `--network host` — the container shares the host's network, so Tomcat binds host `:8080`
+  directly (same URLs as Step 5, and Uptime Kuma needs no reconfiguration) and can reach the
+  Step-1 Postgres on `127.0.0.1:5432`. This is required rather than convenient: `ufw` on this
+  machine blocks the Docker bridge network from reaching host services, so a normal bridged
+  container could never see your database.
+- `--restart unless-stopped` — the app comes back on its own after a reboot or a Docker daemon
+  restart. It does **not** override you: `docker stop ers-monolith-dev` and `docker kill
+  ers-monolith-dev` both leave it down and it stays down, including across a reboot. (That
+  last part is the difference from `--restart always`, which would resurrect a container you
+  had deliberately stopped.)
+
+Because the container publishes `:8080`, **the host Tomcat from Step 4 and the dev container
+cannot both run** — they contend for the same port. Pick one: the container is the CD target,
+and `~/tomcat9` remains the hand-deploy path for stepping through Steps 1-5.
+
+```bash
+# Look at the dev environment
+docker ps --filter name=ers-monolith-dev          # STATUS shows healthy/unhealthy via /health
+docker logs -f ers-monolith-dev                   # Tomcat + FLOW trace output
+curl -s http://localhost:8080/ReimbursementManagement/health
+
+# Take it down (it will NOT come back by itself)
+docker stop ers-monolith-dev
+
+# Roll back to an earlier build: every build is tagged with its build number
+docker images ers-monolith
+docker rm -f ers-monolith-dev
+docker run -d --name ers-monolith-dev --network host --restart unless-stopped \
+  -e dburl="jdbc:postgresql://localhost:5432/ers" -e dbuser=ers -e dbpassword=ers \
+  ers-monolith:<build-number>
+```
+
+Jenkins reads the database settings from three **Secret text** credentials in its own
+credential store — `ers-dburl`, `ers-dbuser`, `ers-dbpassword` — and injects them as the
+`dburl`/`dbuser`/`dbpassword` environment variables the app already expects (Step 3). No
+credential is ever written to a tracked file, and the image itself contains none.
+
+> **Success check.** Push to `main`, watch the build, then reload
+> `http://localhost:8080/ReimbursementManagement/` — it is serving the commit you just pushed,
+> and the Uptime Kuma monolith monitor below flips to green on its own next poll.
 
 ---
 

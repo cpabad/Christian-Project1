@@ -1,11 +1,19 @@
 /*
- * ERS monolith CI pipeline — FULLY IMPLEMENTED (Fable, 2026-07-13).
+ * ERS monolith CI/CD pipeline — CI implemented 2026-07-13, CD added 2026-07-25 (Phase 12).
  *
  * What Jenkins is here: the team you don't have. On every push (SCM poll, ~2 min) it builds
  * from a FRESH clone in CLEAN containers, runs the full test suite against a THROWAWAY seeded
  * database, and runs three security scans — so "green" means "a neutral witness rebuilt and
  * re-verified everything from scratch", not "it worked on my machine". The job's
  * build-stability indicator summarizes recent health at a glance.
+ *
+ * Deploy policy (owner-ruled 2026-07-25): on `main` ONLY, and only after every gate above it
+ * passes, the final stage replaces the containerized dev environment with the image it just
+ * built, then proves the app answers /health before calling the build green. Until this stage
+ * existed the pipeline had a blind spot worth remembering: a build could go green while the
+ * deployed app was DOWN, because a green build packaged a WAR in a throwaway container,
+ * archived it, and touched nothing that was running. CI verified the code; nothing verified
+ * the environment. The monitor (Uptime Kuma) is what surfaced the gap.
  *
  * Scan policy (owner-ruled 2026-07-13, ratcheted 2026-07-14): SCA is now a HARD GATE — the
  * initial 36-finding backlog was triaged and fixed (see CHANGELOG), so a HIGH/CRITICAL CVE,
@@ -205,6 +213,107 @@ EOF
           docker.image('zricethezav/gitleaks:latest').inside("--entrypoint=''") {
             sh 'gitleaks detect --source . --no-git --redact --verbose --config .gitleaks-ci.toml'
           }
+        }
+      }
+    }
+
+    stage('Deploy — dev environment') {
+      // LAST stage on purpose: every gate above (tests, SCA, SAST, secrets) must be green
+      // before anything reaches a running environment. `main` only — a feature branch that
+      // builds green still does not get to replace the dev app.
+      //
+      // The obvious spelling of that rule, `when { branch 'main' }`, is a TRAP here: it reads
+      // env.BRANCH_NAME, which only a Multibranch Pipeline sets. This is a plain Pipeline job
+      // (flow-definition), so BRANCH_NAME is null, the condition is silently false, and the
+      // deploy would never run — no error, no warning, just a permanently skipped stage.
+      // The `branch` form is kept for the day this becomes multibranch; the expression is what
+      // actually fires today. It asks git rather than trusting an env var: the job's SCM config
+      // does restrict this job to */main, but that guard lives outside this file and would
+      // vanish silently if the job were ever repointed.
+      when {
+        anyOf {
+          branch 'main'
+          expression {
+            def head = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
+            def main = sh(returnStdout: true, script: 'git rev-parse --verify -q origin/main || echo none').trim()
+            return head == main
+          }
+        }
+      }
+      steps {
+        script {
+          withCredentials([string(credentialsId: 'ers-dburl',      variable: 'DBURL'),
+                           string(credentialsId: 'ers-dbuser',     variable: 'DBUSER'),
+                           string(credentialsId: 'ers-dbpassword', variable: 'DBPASS')]) {
+            dir('ReimbursementManagement') {
+              // Note the asymmetry with the infra warning at the top of this file: a build
+              // CONTEXT is tarred up by the docker client and streamed over the socket, so
+              // workspace paths work fine here — unlike `docker run -v`, where the daemon
+              // would try to resolve the path on the HOST filesystem and find nothing.
+              // Two tags: BUILD_NUMBER is the rollback handle (docker run ers-monolith:<n>),
+              // latest is what the run below picks up.
+              sh 'docker build -t ers-monolith:${BUILD_NUMBER} -t ers-monolith:latest .'
+            }
+
+            // Replace, don't update: the container is disposable, the image is the artifact.
+            // `|| true` because the very first deploy has nothing to remove.
+            sh 'docker rm -f ers-monolith-dev || true'
+
+            // --network host is REQUIRED here, not a shortcut. ufw on this box blocks the
+            // docker bridge -> host route, so a bridged container can never reach the host's
+            // Postgres on 127.0.0.1:5432. Host networking also means Tomcat binds host :8080
+            // directly, which is why the Uptime Kuma monitor needed no reconfiguration.
+            //
+            // --restart unless-stopped is the self-healing bit: the app comes back by itself
+            // after a reboot or a daemon restart (the gap that left it DOWN after the host
+            // froze). It does NOT fight a deliberate takedown — `docker stop` and `docker
+            // kill` both leave it exited, and unless-stopped remembers that across a reboot
+            // (which is where it differs from `always`).
+            //
+            // Credentials arrive as env vars from the Jenkins store and are expanded by the
+            // SHELL, not by Groovy: single quotes keep the secret out of the generated
+            // script, so it cannot leak into the build log or a `set -x` trace.
+            sh '''docker run -d --name ers-monolith-dev \
+                    --network host --restart unless-stopped \
+                    -e dburl="$DBURL" -e dbuser="$DBUSER" -e dbpassword="$DBPASS" \
+                    ers-monolith:latest'''
+
+            // The stage's whole point. A deploy that does not come up is a FAILED build --
+            // "green build, dead app" is precisely the condition this phase exists to kill,
+            // and standing policy here is that silence is never success. Polls the same
+            // /health endpoint Kuma watches, so CI and the monitor agree by construction.
+            //
+            // The probe runs via `docker exec` INSIDE the app container, not from this one.
+            // Two reasons, both load-bearing: THIS container's localhost:8080 is Jenkins' own
+            // web UI (it answers 403 and would never contain "UP"), and ufw blocks the bridge
+            // network from reaching the host, so no address reachable from here resolves to
+            // the deployed app at all. The app container runs on host networking, so its
+            // 127.0.0.1:8080 is the real thing. If it has crashed, `docker exec` simply fails
+            // and the loop falls through to the failure path -- which is the correct verdict.
+            sh '''
+              for i in $(seq 1 30); do
+                if docker exec ers-monolith-dev curl -fsS http://127.0.0.1:8080/ReimbursementManagement/health 2>/dev/null | grep -q UP; then
+                  echo "DEPLOY OK - /health returned UP after ${i} attempt(s)"
+                  exit 0
+                fi
+                sleep 2
+              done
+              echo "DEPLOY FAILED - /health never returned UP within 60s. Container log tail:"
+              docker logs --tail 50 ers-monolith-dev || true
+              exit 1
+            '''
+
+            // Every build produces a new image; without this the disk fills silently. Learned
+            // the expensive way on the P3 team (see Iteration 3 DevOps notes: a deploy script
+            // missing exactly this line sat on 5 GB of dead layers). Dangling images only --
+            // the tagged :${BUILD_NUMBER} rollback points survive.
+            sh 'docker image prune -f || true'
+          }
+        }
+      }
+      post {
+        success {
+          script { notifyDiscord("DEPLOYED: **${env.JOB_NAME} #${env.BUILD_NUMBER}** is live on the dev environment - http://localhost:8080/ReimbursementManagement/") }
         }
       }
     }
