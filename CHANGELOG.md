@@ -321,6 +321,39 @@ The four `christian/frontend-facelift` commits (login, employee, supervisor page
   establishes identity; authorization consumes it per-request; navigation is just a courtesy
   built on the answer - three concerns, three homes.
 
+## 2026-07 - Continuous deployment to a containerized dev environment
+
+### CI - a build could be green while the deployed app was down
+- **Symptom.** After the host froze and rebooted, Uptime Kuma reported the monolith **DOWN**.
+  A Jenkins **Build Now** ran to **SUCCESS** and the monitor did not move. Two observations
+  that look contradictory - a healthy pipeline and a dead app - and both were correct.
+- **Root cause (also two facts colliding).** (1) Tomcat was a bare host process with nothing
+  supervising it, so the reboot that restored the Jenkins and Kuma containers (they carry
+  `restart: unless-stopped`) left the app down permanently. (2) More fundamentally, the
+  pipeline had five stages and **no deploy**: a green build compiled a WAR inside a throwaway
+  Maven container, archived it as a build artifact, and discarded it. Nothing in CI had ever
+  touched a running application, so no build result could have changed what Kuma saw. CI was
+  verifying the *code*; nothing was verifying the *environment*.
+- **Resolution.** A `Deploy - dev environment` stage, last in the pipeline and gated
+  `when { branch 'main' }`, so it runs only after tests, SCA, SAST and the secrets scan pass.
+  It builds `ReimbursementManagement/Dockerfile` (`tomcat:9.0-jre8-temurin`, matching the
+  JDK-8 pin and the documented Tomcat 9 runtime), replaces the `ers-monolith-dev` container,
+  then **polls `/health` until it answers `UP`** - a deploy that does not come up fails the
+  build. Two run flags carry the design: `--network host`, because `ufw` on this machine
+  blocks the Docker bridge from reaching host services and the container must talk to host
+  Postgres (it also binds host `:8080`, so Kuma's existing monitor URL needed no change); and
+  `--restart unless-stopped`, which restores the app after a reboot without overriding a
+  deliberate `docker stop`/`docker kill`. The image holds no credentials - the app already
+  read `dburl`/`dbuser`/`dbpassword` from the environment, so Jenkins injects them from its
+  credential store at run time. A `docker image prune` keeps build-per-image from silently
+  eating the disk. No application code changed: this phase packages what already built.
+- **Takeaway.** "The build is green" and "the app is up" are different claims, and a pipeline
+  that only makes the first one will let the second rot invisibly. The monitor is what exposed
+  the gap - which is the argument for having a watchdog that does not share fate with the thing
+  it watches. Worth noting how the deploy proves itself: the smoke check polls the *same*
+  `/health` endpoint Kuma polls, so CI and the monitor agree by construction rather than by
+  coincidence.
+
 ## Planned / not yet done
 - **Optional: git history scrub.** The exposed AWS key pair was revoked and all EC2 instances terminated (2026-07-06), so the credential is dead; scrubbing `s3.properties` from git history with `git-filter-repo` (as was done for P3) remains available as pure tidiness.
 - **Microservice refactor (Phase 4) — extracted to its own repo.** The capstone began here in the `ers-service/` module (Spring Boot 3 scaffold → a Role tracer → the Request slice; the branch `christian/microservice` is frozen at that point) and then **moved to a dedicated repository**: [cpabad/Revature931-Project1-Microservice](https://github.com/cpabad/Revature931-Project1-Microservice), where the self-issued-JWT auth slice and the approval-chain slice are done. This repo stays the home of the monolith and the record of its Java 8 refresh; the 2026-07 service extractions make the remaining decomposition mostly mechanical, since the cascades now live in services that port to Spring beans directly.
