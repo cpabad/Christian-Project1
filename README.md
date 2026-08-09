@@ -1,5 +1,18 @@
 # Employee Reimbursement System (ERS)
 
+## Provenance
+
+Authorship in this repository is mixed, and the boundary is marked by the git tag
+**`hand-authored-boundary`** (commit `1550992`, 2021-03-25).
+
+* Everything reachable from that tag is hand-authored by the repository owner as Revature
+  training work.
+* All work after that tag — the 2026 stabilization and extraction pass, and all Terraform,
+  OpenTofu, Kubernetes, and Kafka configuration — is **AI-assisted** and is not presented as
+  the owner's hand-authored work.
+
+The tag is used rather than a date range because file contents at `HEAD` mix both.
+
 ## Project Description
 
 A reimbursement system for a company's employees. Employees can request reimbursements and managers can approve or deny those requests.
